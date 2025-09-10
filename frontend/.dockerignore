@@ -1,0 +1,29 @@
+# frontend/.dockerignore
+
+# Ignorar las dependencias instaladas en la máquina local
+node_modules
+
+# Ignorar el directorio de compilación
+dist
+
+# Ignorar archivos de entorno locales
+.env*
+```
+
+### Pasos Cruciales a Seguir
+
+Para asegurarte de que todo funcione desde un estado limpio, por favor, sigue estos pasos **en orden**:
+
+1.  **Crea el archivo `.dockerignore`**: Asegúrate de que el archivo `frontend/.dockerignore` exista con el contenido que te he proporcionado.
+
+2.  **Limpia tu directorio local**: Ve a tu carpeta `frontend` y **elimina** la carpeta `node_modules` y el archivo `package-lock.json` si existen. Esto es vital para evitar cualquier conflicto.
+
+3.  **Detén y elimina los contenedores**:
+    ```bash
+    docker-compose -f docker-compose.dev.yml down
+    ```
+
+4.  **Reconstruye y levanta todo de nuevo**:
+    ```bash
+    docker-compose -f docker-compose.dev.yml up --build
+    
