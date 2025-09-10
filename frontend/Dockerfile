@@ -1,0 +1,26 @@
+# --- Stage 1: Build ---
+# Actualizamos la versión de Node a una compatible con Vite
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+# Genera la build de producción de React
+RUN npm run build
+
+# --- Stage 2: Production ---
+FROM nginx:stable-alpine
+
+# Copia los archivos estáticos generados por React al directorio de Nginx
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Nginx escuchará en el puerto 80 dentro del contenedor por defecto
+EXPOSE 80
+
+# Inicia Nginx
+CMD ["nginx", "-g", "daemon off;"]
+

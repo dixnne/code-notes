@@ -1,0 +1,6 @@
+Ignorar dependencias y archivos compilados
+/node_modules
+/dist
+
+Ignorar variables de entorno locales
+.env
