@@ -2,6 +2,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
+import { MdEmail } from "react-icons/md";
+import { RiLockPasswordFill } from "react-icons/ri";
+import { FaBookOpen } from "react-icons/fa"; // Importamos un icono para el logo
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -14,40 +17,60 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="p-8 bg-white rounded-lg shadow-md w-96">
-        <h2 className="text-2xl font-bold text-center mb-6">Iniciar Sesión</h2>
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="p-8 bg-white/70 backdrop-blur-sm rounded-xl shadow-lg w-96 border border-white text-center">
+        {/* Logo de la aplicación */}
+        <div className="flex justify-center mb-4">
+          <FaBookOpen className="text-5xl text-teal-dark" />
+        </div>
+        
+        {/* Título con la nueva fuente */}
+        <h2 className="text-4xl font-bold text-teal-dark mb-2 font-display">
+          CodeNotes
+        </h2>
+        <p className="text-gray-600 mb-6">Inicia sesión para continuar</p>
+        
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-gray-700">Correo Electrónico</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
+            <label className="block text-gray-700 mb-1 text-left">Correo Electrónico</label>
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+                <MdEmail className="text-gray-400" />
+              </span>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full pl-10 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-dark"
+                required
+              />
+            </div>
           </div>
           <div className="mb-6">
-            <label className="block text-gray-700">Contraseña</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
+            <label className="block text-gray-700 mb-1 text-left">Contraseña</label>
+            <div className="relative">
+               <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+                <RiLockPasswordFill className="text-gray-400" />
+              </span>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full pl-10 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-dark"
+                required
+              />
+            </div>
           </div>
           <button
             type="submit"
-            className="w-full py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+            className="w-full py-2 text-white bg-teal-dark rounded-lg hover:bg-orange-accent transition-colors duration-300 font-semibold"
           >
             Entrar
           </button>
         </form>
-        <p className="mt-4 text-center">
+        <p className="mt-4 text-center text-sm">
           ¿No tienes una cuenta?{' '}
-          <Link to="/register" className="text-blue-600 hover:underline">
+          <Link to="/register" className="text-teal-dark hover:text-orange-accent font-semibold hover:underline">
             Regístrate
           </Link>
         </p>
@@ -57,3 +80,4 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
+
