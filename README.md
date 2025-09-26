@@ -1,10 +1,10 @@
 # CodeNotes: Aplicación de Notas para Tesina
 
-**Autor:** [Tu Nombre Completo]
+**Autores:** Diana Narváez, Diego Magdaleno
+
 **Institución:** Universidad Autónoma de Aguascalientes
-**Carrera:** [Tu Carrera]
-**Materia:** [Materia o Proyecto de Tesina]
-**Profesor:** [Nombre del Profesor]
+
+**Carrera:** Ingeniería en Sistemas Computacionales
 
 ---
 
