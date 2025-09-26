@@ -132,6 +132,3 @@ Sigue estos pasos para levantar el proyecto en tu entorno local.
 
 Este proyecto está bajo la **Licencia MIT**. Consulta el archivo `LICENSE` para más detalles.
 
----
-
-Hecho con ❤️ por [Tu Nombre] para la Universidad Autónoma de Aguascalientes.
