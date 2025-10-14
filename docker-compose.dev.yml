@@ -17,7 +17,6 @@ services:
     ports:
       - "5432:5432"
     environment:
-      # --- CORRECCIÓN IMPORTANTE AQUÍ ---
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
@@ -43,7 +42,6 @@ services:
       db:
         condition: service_healthy
     command: sh -c "npx prisma migrate deploy && npm run start:dev"
-    # --- CAMBIO IMPORTANTE AQUÍ ---
     # Se añade un healthcheck para el propio backend.
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
