@@ -1,89 +1,91 @@
 // frontend/src/contexts/AuthContext.jsx
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
+import api from '../services/api'; // Importamos nuestro cliente API
 
-const AuthContext = createContext();
-
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
+  // 1. Leemos el token de localStorage al iniciar
+  const [token, setToken] = useState(() => localStorage.getItem('token'));
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
-  const [loading, setLoading] = useState(true); // Estado para la carga inicial
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      if (token) {
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        try {
-          // Llamamos al nuevo endpoint para obtener los datos del usuario
-          const response = await axios.get('/api/auth/profile');
-          setUser(response.data);
-        } catch (error) {
-          console.error("Token inválido o expirado, cerrando sesión.");
-          // Si el token no es válido, limpiamos todo
-          localStorage.removeItem('token');
-          setToken(null);
-          setUser(null);
-          delete axios.defaults.headers.common['Authorization'];
-          navigate('/login');
-        }
-      }
-      setLoading(false);
-    };
-
-    fetchUser();
-  }, [token, navigate]);
-
-  const register = async (username, email, password) => {
-    try {
-      await axios.post('/api/auth/register', { username, email, password });
-      navigate('/login');
-    } catch (error) {
-      console.error('Error en el registro:', error.response.data);
-    }
-  };
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('/api/auth/login', { email, password });
+      const response = await api.post('/auth/login', { email, password });
       const { access_token } = response.data;
+      
+      // 2. Guardamos el token en localStorage y en el estado
       localStorage.setItem('token', access_token);
-      // Al actualizar el token, el useEffect se ejecutará automáticamente
-      // para obtener los datos del usuario.
       setToken(access_token);
+      
+      // Obtenemos el perfil del usuario inmediatamente después del login
+      await fetchUserProfile(access_token);
+      
       navigate('/');
+      return null; // Éxito
     } catch (error) {
-      console.error('Error en el inicio de sesión:', error.response.data);
+      console.error('Error en el login:', error.response?.data);
+      return error.response?.data?.message || 'Error al iniciar sesión';
+    }
+  };
+
+  const register = async (username, email, password) => {
+    try {
+      await api.post('/auth/register', { username, email, password });
+      navigate('/login');
+      return null; // Éxito
+    } catch (error) {
+      console.error('Error en el registro:', error.response?.data);
+      return error.response?.data?.message || 'Error al registrarse';
     }
   };
 
   const logout = () => {
+    // 3. Limpiamos localStorage y el estado
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
-    delete axios.defaults.headers.common['Authorization'];
     navigate('/login');
   };
 
-  const value = {
-    user, // <-- AHORA EXPORTAMOS EL USUARIO
-    token,
-    loading,
-    login,
-    logout,
-    register,
+  const fetchUserProfile = async (currentToken) => {
+    if (!currentToken) return;
+    try {
+      // Configuramos el header para esta petición específica (por si api.js aún no lo tiene)
+      const response = await api.get('/auth/profile', {
+        headers: { Authorization: `Bearer ${currentToken}` }
+      });
+      setUser(response.data);
+    } catch (error) {
+      console.error('Error al obtener el perfil:', error);
+      logout(); // Si el token es inválido, cerramos sesión
+    }
   };
 
-  // Evitamos renderizar las rutas protegidas mientras se verifica el token
-  if (loading) {
-    return <div className="flex justify-center items-center min-h-screen">Cargando...</div>;
-  }
+  // 4. Efecto para cargar el perfil del usuario si hay un token al recargar la página
+  useEffect(() => {
+    if (token) {
+      const decoded = jwtDecode(token);
+      const isExpired = decoded.exp * 1000 < Date.now();
+      if (isExpired) {
+        logout();
+      } else {
+        fetchUserProfile(token);
+      }
+    }
+  }, [token]); // Se ejecuta cada vez que el token cambia
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ token, user, login, register, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  return useContext(AuthContext);
 };
 

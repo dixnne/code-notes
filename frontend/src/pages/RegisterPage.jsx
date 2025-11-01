@@ -2,95 +2,103 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import { FaUser, FaBookOpen } from "react-icons/fa";
-import { MdEmail } from "react-icons/md";
-import { RiLockPasswordFill } from "react-icons/ri";
+import { FaNoteSticky } from 'react-icons/fa6';
+import { FiMail, FiLock, FiUser } from 'react-icons/fi';
 
 const RegisterPage = () => {
+  // ... (estado y lógica de registro se mantienen igual) ...
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
   const { register } = useAuth();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    register(username, email, password);
+    if (password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
+    setError(null);
+    const regError = await register(username, email, password);
+    if (regError) {
+      setError(regError);
+    }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="p-8 bg-white/70 backdrop-blur-sm rounded-xl shadow-lg w-96 border border-white text-center">
-        {/* Logo de la aplicación */}
-        <div className="flex justify-center mb-4">
-            <FaBookOpen className="text-5xl text-teal-dark" />
-        </div>
-        
-        {/* Título con la nueva fuente */}
-        <h2 className="text-4xl font-bold text-teal-dark mb-2 font-display">
-          CodeNotes
-        </h2>
-        <p className="text-gray-600 mb-6">Crea tu cuenta para empezar</p>
-        
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-gray-700 mb-1 text-left">Nombre de Usuario</label>
+    // Usamos los nuevos colores semánticos
+    <div className="flex items-center justify-center min-h-screen bg-light-bg dark:bg-gradient-to-br from-dark-bg to-[#111620] p-4">
+      <div className="w-full max-w-md">
+        <div className="bg-light-card dark:bg-dark-card/60 shadow-xl rounded-lg p-8 backdrop-blur-sm border border-black/10 dark:border-white/10">
+          {/* ... (Logo se mantiene igual) ... */}
+          <div className="flex justify-center items-center mb-6">
+            <FaNoteSticky className="text-primary text-4xl" />
+            <h1 className="text-3xl font-bold font-display text-light-text dark:text-white ml-2">
+              Code<span className="text-primary">Notes</span>
+            </h1>
+          </div>
+          <h2 className="text-2xl font-bold text-center text-light-text dark:text-white mb-6">
+            Crear Cuenta
+          </h2>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* ... (Inputs actualizados con colores de tema) ... */}
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                <FaUser className="text-gray-400" />
-              </span>
+              <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-light-text-secondary dark:text-gray-400" />
               <input
                 type="text"
+                placeholder="Nombre de usuario"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full pl-10 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-dark"
-                required
+                className="w-full pl-10 pr-4 py-2 bg-light-bg dark:bg-dark-bg border border-black/20 dark:border-white/20 rounded-md text-light-text dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
-          </div>
-          <div className="mb-4">
-            <label className="block text-gray-700 mb-1 text-left">Correo Electrónico</label>
-             <div className="relative">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                <MdEmail className="text-gray-400" />
-              </span>
+            <div className="relative">
+              <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-light-text-secondary dark:text-gray-400" />
               <input
                 type="email"
+                placeholder="Correo electrónico"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-dark"
-                required
+                className="w-full pl-10 pr-4 py-2 bg-light-bg dark:bg-dark-bg border border-black/20 dark:border-white/20 rounded-md text-light-text dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
-          </div>
-          <div className="mb-6">
-            <label className="block text-gray-700 mb-1 text-left">Contraseña</label>
-             <div className="relative">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                <RiLockPasswordFill className="text-gray-400" />
-              </span>
+            <div className="relative">
+              <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-light-text-secondary dark:text-gray-400" />
               <input
                 type="password"
+                placeholder="Contraseña (mín. 8 caracteres)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-dark"
-                required
-                minLength="8"
+                className="w-full pl-10 pr-4 py-2 bg-light-bg dark:bg-dark-bg border border-black/20 dark:border-white/20 rounded-md text-light-text dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
-          </div>
-          <button
-            type="submit"
-            className="w-full py-2 text-white bg-teal-dark rounded-lg hover:bg-orange-accent transition-colors duration-300 font-semibold"
-          >
-            Registrarse
-          </button>
-        </form>
-        <p className="mt-4 text-center text-sm">
-          ¿Ya tienes una cuenta?{' '}
-          <Link to="/login" className="text-teal-dark hover:text-orange-accent font-semibold hover:underline">
-            Inicia sesión
-          </Link>
-        </p>
+
+            {error && (
+              <p className="text-red-500 dark:text-red-400 text-sm text-center">
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              className="w-full py-2 px-4 bg-accent1 hover:bg-accent1/90 text-dark-bg font-bold rounded-md transition-colors duration-300"
+            >
+              Registrarse
+            </button>
+          </form>
+
+          <p className="text-sm text-center text-light-text-secondary dark:text-gray-400 mt-6">
+            ¿Ya tienes una cuenta?{' '}
+            <Link
+              to="/login"
+              className="font-medium text-primary hover:underline"
+            >
+              Inicia sesión
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

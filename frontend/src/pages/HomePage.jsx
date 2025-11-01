@@ -1,42 +1,98 @@
 // frontend/src/pages/HomePage.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import { FaPlus, FaBook } from 'react-icons/fa';
+import api from '../services/api';
+import NotebookCard from '../components/NotebookCard';
+import CreateNotebookModal from '../components/CreateNotebookModal';
+import { FiPlusCircle } from 'react-icons/fi';
 
 const HomePage = () => {
-  // Datos de ejemplo para los notebooks. Eventualmente vendrán de la API.
-  const notebooks = [
-    { id: 1, title: 'Proyecto de Tesina', noteCount: 12 },
-    { id: 2, title: 'Apuntes de React Avanzado', noteCount: 8 },
-    { id: 3, title: 'Configuraciones de Docker', noteCount: 5 },
-  ];
+  const [notebooks, setNotebooks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  return (
-    <DashboardLayout>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-teal-dark font-display">Mis Notebooks</h1>
-        <button className="flex items-center gap-2 px-4 py-2 text-white bg-orange-accent rounded-lg hover:bg-yellow-accent transition-colors duration-300 shadow-lg">
-          <FaPlus />
-          <span>Crear Notebook</span>
-        </button>
-      </div>
+  useEffect(() => {
+    const fetchNotebooks = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/notebooks');
+        setNotebooks(response.data);
+        setError(null);
+      } catch (err) {
+        console.error('Error al cargar notebooks:', err);
+        setError('No se pudo cargar la información.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      {/* Grid para los notebooks */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    fetchNotebooks();
+  }, []);
+
+  const handleNotebookCreated = (newNotebook) => {
+    setNotebooks([newNotebook, ...notebooks]);
+  };
+
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            // Esqueleto de carga actualizado para el tema
+            <div key={i} className="h-28 bg-light-card dark:bg-dark-card/60 rounded-lg animate-pulse" />
+          ))}
+        </div>
+      );
+    }
+    
+    if (error) {
+      return <p className="text-red-500 dark:text-red-400">{error}</p>;
+    }
+
+    if (notebooks.length === 0) {
+      return (
+        <div className="text-center text-light-text-secondary dark:text-gray-400 py-16">
+          <p className="text-lg">No tienes notebooks todavía.</p>
+          <p>¡Crea uno para empezar!</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {notebooks.map((notebook) => (
-          <div 
-            key={notebook.id} 
-            className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer border-l-4 border-teal-dark"
-          >
-            <div className="flex items-center gap-4 mb-2">
-              <FaBook className="text-2xl text-teal-dark" />
-              <h2 className="text-xl font-semibold text-gray-800">{notebook.title}</h2>
-            </div>
-            <p className="text-gray-500">{notebook.noteCount} notas</p>
-          </div>
+          <NotebookCard key={notebook.id} notebook={notebook} />
         ))}
       </div>
-    </DashboardLayout>
+    );
+  };
+
+  return (
+    <>
+      <DashboardLayout>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-light-text dark:text-secondary font-display">
+            Mis Notebooks
+          </h1>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 bg-accent1 hover:bg-accent1/90 text-dark-bg font-bold py-2 px-4 rounded-lg transition-colors duration-300 shadow-lg"
+          >
+            <FiPlusCircle />
+            Nuevo Notebook
+          </button>
+        </div>
+
+        {renderContent()}
+      </DashboardLayout>
+
+      <CreateNotebookModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onNotebookCreated={handleNotebookCreated}
+      />
+    </>
   );
 };
 

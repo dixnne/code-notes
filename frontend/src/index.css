@@ -1,10 +1,17 @@
 /* frontend/src/index.css */
+@import url('https://fonts.googleapis.com/css2?family=Epunda+Slab:wght@100..900&family=Roboto:wght@400;500;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Añadimos un estilo base para el cuerpo de la página */
-body {
-  @apply bg-teal-light;
+@layer base {
+  body {
+    /* 3. Definimos los estilos base (modo claro) y los overrides para .dark */
+    @apply bg-light-bg text-light-text antialiased transition-colors duration-300;
+  }
+  .dark body {
+    @apply bg-gradient-to-br from-dark-bg to-[#111620] text-dark-text;
+  }
 }
 
