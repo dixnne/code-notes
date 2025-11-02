@@ -1,28 +1,45 @@
 // frontend/src/services/api.js
 import axios from 'axios';
 
-// 1. Creamos una instancia de Axios
-const api = axios.create({
-  baseURL: 'http://localhost:8080/api', // Nuestra URL base de la API
+// Creamos una instancia de axios
+const apiClient = axios.create({
+  baseURL: 'http://localhost:8080/api', // Nuestra URL base de Nginx
 });
 
-// 2. Creamos un "interceptor"
-// Esto es una función que se ejecuta ANTES de que se envíe cada petición
-api.interceptors.request.use(
+// --- Interceptor de Petición ---
+// Adjuntamos el token a CADA petición saliente
+apiClient.interceptors.request.use(
   (config) => {
-    // 3. Obtenemos el token de localStorage
     const token = localStorage.getItem('token');
-    
-    // 4. Si el token existe, lo añadimos al header de autorización
     if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
   (error) => {
-    // Manejamos errores en la petición
     return Promise.reject(error);
   }
 );
 
-export default api;
+// --- Servicios de Autenticación ---
+export const login = (email, password) => apiClient.post('/auth/login', { email, password });
+export const register = (username, email, password) => apiClient.post('/auth/register', { username, email, password });
+export const getProfile = () => apiClient.get('/auth/profile');
+
+// --- Servicios de Notebooks ---
+export const getNotebooks = () => apiClient.get('/notebooks');
+export const createNotebook = (title) => apiClient.post('/notebooks', { title });
+
+// --- Servicios de Notas ---
+export const getNotesForNotebook = (notebookId) => apiClient.get(`/notebooks/${notebookId}/notes`);
+export const createNote = (title, notebookId) => apiClient.post('/notes', { title, notebookId });
+
+// --- CORRECCIÓN AQUÍ ---
+// Cambiamos .put() por .patch() para que coincida con el backend
+export const updateNote = (id, data) => apiClient.patch(`/notes/${id}`, data);
+
+export const deleteNote = (id) => apiClient.delete(`/notes/${id}`);
+
+// Exportamos la instancia por defecto para el AuthContext
+export default apiClient;
+
