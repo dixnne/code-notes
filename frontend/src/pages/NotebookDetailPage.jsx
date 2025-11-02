@@ -1,7 +1,8 @@
 // frontend/src/pages/NotebookDetailPage.jsx
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom'; // <-- CORRECCIÓN DEL TYPO
-import { getNotesForNotebook } from '../services/api';
+import { useParams } from 'react-router-dom';
+// --- CAMBIO: Importamos 'deleteNote' ---
+import { getNotesForNotebook, deleteNote } from '../services/api';
 import DashboardLayout from '../components/DashboardLayout';
 import NoteList from '../components/NoteList';
 import NoteEditor from '../components/NoteEditor';
@@ -9,7 +10,6 @@ import NoteEditor from '../components/NoteEditor';
 export default function NotebookDetailPage() {
   const { notebookId } = useParams();
   
-  // Línea de depuración para confirmar que el nuevo código se está ejecutando
   console.log('Cargando Notebook ID:', notebookId);
 
   const [notes, setNotes] = useState([]);
@@ -24,7 +24,6 @@ export default function NotebookDetailPage() {
         setIsLoading(true);
         const res = await getNotesForNotebook(notebookId);
         setNotes(res.data);
-        // Seleccionar la primera nota por defecto, si existe
         if (res.data.length > 0) {
           setCurrentNote(res.data[0]);
         } else {
@@ -39,28 +38,50 @@ export default function NotebookDetailPage() {
       }
     };
     fetchNotes();
-  }, [notebookId]); // Se vuelve a ejecutar si cambia el ID del notebook
+  }, [notebookId]);
 
-  // Función para actualizar una nota en la lista local
   const onNoteUpdated = (updatedNote) => {
     setNotes(notes.map(note => note.id === updatedNote.id ? updatedNote : note));
-    
-    // Actualizar también la nota actual si es la que se editó
     if (currentNote && currentNote.id === updatedNote.id) {
       setCurrentNote(updatedNote);
     }
   };
 
-  // Función para añadir una nueva nota a la lista
   const onNoteCreated = (newNote) => {
     setNotes([newNote, ...notes]);
-    setCurrentNote(newNote); // Seleccionar la nota recién creada
+    setCurrentNote(newNote); 
+  };
+
+  // --- CAMBIO: Nueva función para manejar la eliminación ---
+  const handleDeleteNote = async (noteId) => {
+    // 1. Confirmación del usuario
+    if (!window.confirm("¿Estás seguro de que quieres eliminar esta nota? Esta acción no se puede deshacer.")) {
+      return;
+    }
+
+    try {
+      // 2. Llamada a la API
+      await deleteNote(noteId);
+
+      // 3. Actualizar el estado local
+      const newNotes = notes.filter((note) => note.id !== noteId);
+      setNotes(newNotes);
+
+      // 4. Ajustar la nota activa
+      if (currentNote && currentNote.id === noteId) {
+        // Si la nota eliminada era la activa, selecciona la primera
+        // de la nueva lista, o null si la lista está vacía.
+        setCurrentNote(newNotes.length > 0 ? newNotes[0] : null);
+      }
+    } catch (err) {
+      console.error('Error al eliminar la nota:', err);
+      alert('No se pudo eliminar la nota. Inténtalo de nuevo.');
+    }
   };
 
   return (
     <DashboardLayout>
       <div className="flex h-[calc(100vh-4.1rem)] w-full">
-        {/* --- Barra Lateral de Notas --- */}
         <div className="h-full w-1/4 max-w-sm overflow-y-auto border-r border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
           <NoteList
             notes={notes}
@@ -68,10 +89,10 @@ export default function NotebookDetailPage() {
             currentNoteId={currentNote?.id}
             onSelectNote={setCurrentNote}
             onNoteCreated={onNoteCreated}
+            onDeleteNote={handleDeleteNote} // <-- 5. Pasamos la nueva prop
           />
         </div>
 
-        {/* --- Editor Principal --- */}
         <div className="h-full w-3/4 flex-1">
           {isLoading && (
             <div className="flex h-full items-center justify-center text-gray-500 dark:text-gray-400">
