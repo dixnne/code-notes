@@ -1,9 +1,14 @@
 // frontend/src/components/NoteEditor.jsx
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { updateNote } from '../services/api';
+import ReactMde from 'react-mde';
+import * as Showdown from 'showdown';
+import 'react-mde/lib/styles/css/react-mde-all.css';
+import 'highlight.js/styles/github-dark.css'; // Mantenemos el CSS
+import showdownHighlight from 'showdown-highlight'; // ¡CAMBIO 1: Importar explícitamente!
 
-// Hook de "debounce" para no saturar la API
 function useDebounce(value, delay) {
+// ... (código del hook sin cambios) ...
   const [debouncedValue, setDebouncedValue] = useState(value);
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -16,10 +21,24 @@ function useDebounce(value, delay) {
   return debouncedValue;
 }
 
+// --- CONFIGURACIÓN CORREGIDA DEL CONVERTIDOR ---
+const converter = new Showdown.Converter({
+  tables: true,
+  simplifiedAutoLink: true,
+  strikethrough: true,
+  tasklists: true,
+  ghCodeBlocks: true,
+  extensions: [showdownHighlight] // ¡CAMBIO 2: Pasar la variable importada!
+});
+// --- FIN DE LA CORRECCIÓN ---
+
+
 export default function NoteEditor({ note, onNoteUpdated }) {
+// ... (resto del componente sin cambios) ...
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content || '');
   const [status, setStatus] = useState('idle');
+  const [selectedTab, setSelectedTab] = useState('write');
 
   // Ref para evitar el guardado automático en la carga inicial
   const isInitialMount = useRef(true);
@@ -100,17 +119,32 @@ export default function NoteEditor({ note, onNoteUpdated }) {
         className="border-b border-gray-200 bg-transparent px-6 pb-2 text-3xl font-bold text-gray-900 outline-none dark:border-gray-700 dark:text-white"
       />
 
-      {/* Editor de Contenido (por ahora un textarea) */}
-      <textarea
-        value={content}
-        onChange={(e) => {
-          setContent(e.target.value); // <-- ¡CORREGIDO!
-          if (status === 'error') setStatus('idle'); // Limpiar error al escribir
-        }}
-        placeholder="Comienza a escribir tu nota..."
-        className="h-full w-full flex-1 resize-none bg-transparent p-6 text-base text-gray-800 outline-none dark:text-gray-200"
-        style={{ fontFamily: 'monospace' }} // Mejor para código
-      />
+      {/* Editor de Contenido con Markdown */}
+      <div className="flex-1 overflow-y-auto">
+        <ReactMde
+          value={content}
+          onChange={(newContent) => {
+            setContent(newContent);
+            if (status === 'error') setStatus('idle');
+          }}
+          selectedTab={selectedTab}
+          onTabChange={setSelectedTab}
+          generateMarkdownPreview={(markdown) =>
+            Promise.resolve(converter.makeHtml(markdown))
+          }
+          childProps={{
+            writeButton: {
+              tabIndex: -1
+            }
+          }}
+          paste={{
+            saveImage: async function* (data) {
+              // Manejar pegado de imágenes si es necesario
+              yield "https://via.placeholder.com/300";
+            }
+          }}
+        />
+      </div>
     </div>
   );
 }
