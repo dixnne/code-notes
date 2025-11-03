@@ -1,34 +1,20 @@
 // frontend/src/contexts/ThemeContext.jsx
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
 
-// 1. Función para obtener el tema preferido del sistema
-const getInitialTheme = () => {
-  if (typeof window !== 'undefined' && window.localStorage) {
-    const storedPrefs = window.localStorage.getItem('theme');
-    if (typeof storedPrefs === 'string') {
-      return storedPrefs;
-    }
+// 1. Creamos el contexto
+const ThemeContext = createContext();
 
-    const userMedia = window.matchMedia('(prefers-color-scheme: dark)');
-    if (userMedia.matches) {
-      return 'dark';
-    }
-  }
-  return 'light'; // default
-};
-
-// 2. Creamos el contexto
-export const ThemeContext = createContext();
-
+// 2. Creamos el Proveedor del tema
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(getInitialTheme);
+  // Leemos del localStorage o usamos 'light' por defecto
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
 
-  // 3. Efecto para aplicar la clase 'dark' al <html>
   useEffect(() => {
     const root = window.document.documentElement;
-    const isDark = theme === 'dark';
-
-    root.classList.remove(isDark ? 'light' : 'dark');
+    
+    // Eliminamos la clase anterior
+    root.classList.remove(theme === 'light' ? 'dark' : 'light');
+    // Añadimos la clase actual
     root.classList.add(theme);
 
     // Guardamos la preferencia en localStorage
@@ -36,7 +22,7 @@ export const ThemeProvider = ({ children }) => {
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
+    setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
   return (
@@ -46,7 +32,6 @@ export const ThemeProvider = ({ children }) => {
   );
 };
 
-// 4. Hook personalizado para usar el contexto
-export const useTheme = () => {
-  return useContext(ThemeContext);
-};
+// 3. Creamos el hook personalizado para consumir el contexto
+export const useTheme = () => useContext(ThemeContext);
+

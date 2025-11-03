@@ -33,7 +33,7 @@ const Header = () => {
 
   return (
     // 4. Header distinguible: con fondo sólido, borde y sombra
-    <header className="w-full p-4 md:p-6 mb-8 bg-light-card dark:bg-dark-card shadow-md border-b border-black/10 dark:border-white/10">
+    <header className="w-full p-4 md:p-6 bg-light-card dark:bg-dark-card shadow-md border-b border-black/10 dark:border-white/10">
       <nav className="max-w-7xl mx-auto flex justify-between items-center">
         {/* Logo y Título */}
         <div className="flex items-center space-x-2">

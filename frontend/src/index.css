@@ -1,17 +1,84 @@
 /* frontend/src/index.css */
 @import url('https://fonts.googleapis.com/css2?family=Epunda+Slab:wght@100..900&family=Roboto:wght@400;500;700&display=swap');
 
+/* 1. Importaciones base de Tailwind */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* 2. Definición de estilos base */
 @layer base {
   body {
-    /* 3. Definimos los estilos base (modo claro) y los overrides para .dark */
-    @apply bg-light-bg text-light-text antialiased transition-colors duration-300;
+    /* Usamos theme() para aplicar colores del config de Tailwind */
+    background-color: theme('colors.light-bg');
+    color: theme('colors.light-text');
+    @apply antialiased transition-colors duration-300;
   }
   .dark body {
-    @apply bg-gradient-to-br from-dark-bg to-[#111620] text-dark-text;
+    background-color: theme('colors.dark-bg');
+    color: theme('colors.dark-text');
+    @apply bg-gradient-to-br from-dark-bg to-[#111620];
+  }
+}
+
+/* 3. Anulaciones (overrides) para componentes de terceros */
+@layer components {
+  /* --- Anulaciones para @uiw/react-md-editor --- */
+
+  /* Contenedor principal del editor */
+  .w-md-editor {
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    border: none !important;
+    /* Aplicamos nuestros colores de tarjeta (card) */
+    @apply bg-light-card;
+  }
+  .dark .w-md-editor {
+    @apply bg-dark-card;
+  }
+
+  /* Barra de herramientas */
+  .w-md-editor-toolbar {
+    flex-shrink: 0 !important;
+    border-bottom-width: 1px !important;
+    /* Aplicamos nuestros colores de fondo (bg) y borde */
+    @apply bg-light-bg border-light-text-secondary/30;
+  }
+  .dark .w-md-editor-toolbar {
+    @apply bg-dark-bg border-dark-text-secondary/30;
+  }
+
+  /* --- CORRECCIÓN DE ALTURA --- */
+  /* Área de contenido (editor + preview) */
+  .w-md-editor-content {
+    flex: 1 1 0% !important; /* <--- Esta línea fuerza a que ocupe el espacio */
+    overflow: auto !important;
+    height: 100% !important;
+  }
+
+  /* Paneles internos */
+  .w-md-editor-input,
+  .w-md-editor-preview {
+    height: 100% !important;
+    overflow-y: auto !important;
+    /* Fondo de los paneles */
+    @apply bg-light-card;
+  }
+  .dark .w-md-editor-input,
+  .dark .w-md-editor-preview {
+    @apply bg-dark-card;
+  }
+  /* --- FIN DE LA CORRECCIÓN DE ALTURA Y COLOR --- */
+
+
+  /* Divisor de la vista dividida */
+  .w-md-editor-splitter {
+    @apply border-light-text-secondary/30;
+  }
+  .dark .w-md-editor-splitter {
+    @apply border-dark-text-secondary/30;
   }
 }
 
