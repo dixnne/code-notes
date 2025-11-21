@@ -1,5 +1,5 @@
 // frontend/src/components/NoteEditor.jsx
-import { useState, useEffect, useCallback, useRef, useContext } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { updateNote } from '../services/api';
 import ReactMDEditor from '@uiw/react-md-editor'; 
 import { useTheme } from '../contexts/ThemeContext'; 
@@ -20,19 +20,24 @@ function useDebounce(value, delay) {
 
 export default function NoteEditor({ note, onNoteUpdated }) {
   const { theme } = useTheme(); 
+  
+  // --- DEBUG: Ver qué nota estamos recibiendo del padre ---
+  console.log('[NoteEditor] Renderizando. Nota ID:', note?.id, 'Título:', note?.title);
+
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content || '');
   const [status, setStatus] = useState('idle');
 
   const isInitialMount = useRef(true);
 
-  // Sincronizar el estado local si la nota seleccionada cambia
+  // Sincronizar el estado local SOLO si cambia el ID de la nota
   useEffect(() => {
+    console.log('[NoteEditor] Cambio de nota detectado (ID):', note.id);
     setTitle(note.title);
     setContent(note.content || '');
     setStatus('idle');
     isInitialMount.current = true;
-  }, [note.id, note.title, note.content]);
+  }, [note.id]); 
 
   // Valores "debounced"
   const debouncedTitle = useDebounce(title, 1000);
@@ -40,14 +45,21 @@ export default function NoteEditor({ note, onNoteUpdated }) {
 
   // Efecto para guardar automáticamente
   const handleSave = useCallback(async (saveData) => {
-    if (!note || !note.id) return;
+    console.log('[NoteEditor] handleSave ejecutándose con:', saveData);
+    
+    if (!note || !note.id) {
+      console.error('[NoteEditor] Error: No hay ID de nota para guardar');
+      return;
+    }
+    
     setStatus('saving');
     try {
       const res = await updateNote(note.id, saveData);
-      onNoteUpdated(res.data); // Notificar al padre de la actualización
+      console.log('[NoteEditor] Guardado exitoso en API:', res.data);
+      onNoteUpdated(res.data); 
       setStatus('idle');
     } catch (err) {
-      console.error('Error al guardar la nota:', err);
+      console.error('[NoteEditor] Error en API al guardar:', err);
       setStatus('error');
     }
   }, [note.id, onNoteUpdated]);
@@ -58,33 +70,44 @@ export default function NoteEditor({ note, onNoteUpdated }) {
       isInitialMount.current = false;
       return;
     }
+
     const safeContent = content || '';
     const noteContent = note.content || '';
-    if (debouncedTitle !== note.title || debouncedContent !== noteContent) {
-      handleSave({ title: debouncedTitle, content: debouncedContent });
+    
+    // --- DEBUG: Ver por qué se dispara (o no) el guardado ---
+    console.log('[NoteEditor] Verificando cambios:', {
+      localTitle: debouncedTitle,
+      serverTitle: note.title,
+      localContent: safeContent,
+      serverContent: noteContent,
+      isDifferent: debouncedTitle !== note.title || safeContent !== noteContent
+    });
+
+    if (debouncedTitle !== note.title || safeContent !== noteContent) {
+      console.log('[NoteEditor] Cambios detectados -> Disparando handleSave');
+      handleSave({ title: debouncedTitle, content: safeContent });
     }
-  }, [debouncedTitle, debouncedContent, note.title, note.content, handleSave]);
+  }, [debouncedTitle, debouncedContent, handleSave]); // Dependencias simplificadas
 
   // Función para mostrar el estado del guardado
   const renderStatus = () => {
     if (status === 'saving') {
-      return <span className="text-sm italic text-light-text-secondary dark:text-dark-text-secondary">Guardando...</span>;
+      return <span className="text-sm italic text-gray-500 dark:text-gray-400">Guardando...</span>;
     }
     if (status === 'error') {
-      return <span className="text-sm font-semibold text-accent1">Error al guardar</span>;
+      return <span className="text-sm font-semibold text-red-500">Error al guardar</span>;
     }
     return <span className="h-5 text-sm">&nbsp;</span>;
   };
 
   return (
-    // Aseguramos que el div contenedor principal use los colores correctos
-    <div className="flex h-full flex-col bg-light-card dark:bg-dark-card">
+    <div className="flex h-full flex-col bg-white dark:bg-gray-900">
       {/* Indicador de guardado */}
       <div className="flex h-8 items-center justify-end px-6 pt-2">
         {renderStatus()}
       </div>
 
-      {/* Editor de Título (con colores de nuestro tema) */}
+      {/* Editor de Título */}
       <input
         type="text"
         value={title}
@@ -93,7 +116,7 @@ export default function NoteEditor({ note, onNoteUpdated }) {
           if (status === 'error') setStatus('idle');
         }}
         placeholder="Título de la nota"
-        className="border-b border-light-text-secondary/30 bg-transparent px-6 pb-2 text-3xl font-bold text-light-text outline-none dark:border-dark-text-secondary/30 dark:text-dark-text"
+        className="border-b border-gray-200 bg-transparent px-6 pb-2 text-3xl font-bold text-gray-900 outline-none dark:border-gray-700 dark:text-white"
       />
 
       {/* Editor de Contenido (Altura Corregida) */}
@@ -106,10 +129,10 @@ export default function NoteEditor({ note, onNoteUpdated }) {
           }}
           preview="live" 
           hideToolbar={false}
-          className="h-full" // <-- Esto ya estaba bien
+          className="h-full"
+          visiableDragbar={false}
         />
       </div>
     </div>
   );
 }
-

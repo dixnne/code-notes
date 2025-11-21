@@ -1,124 +1,122 @@
 // frontend/src/pages/NotebookDetailPage.jsx
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-// --- CAMBIO: Importamos 'deleteNote' ---
-import { getNotesForNotebook, deleteNote } from '../services/api';
-import DashboardLayout from '../components/DashboardLayout';
+import { getNotesForNotebook, createNote, deleteNote } from '../services/api';
 import NoteList from '../components/NoteList';
 import NoteEditor from '../components/NoteEditor';
+import DashboardLayout from '../components/DashboardLayout'; // 1. Importar Layout
 
-export default function NotebookDetailPage() {
-  const { notebookId } = useParams();
-  
-  console.log('Cargando Notebook ID:', notebookId);
-
+function NotebookDetailPage() {
   const [notes, setNotes] = useState([]);
-  const [currentNote, setCurrentNote] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [activeNote, setActiveNote] = useState(null);
+  const { notebookId } = useParams();
 
-  // Cargar las notas del notebook al montar la página
-  useEffect(() => {
-    const fetchNotes = async () => {
-      try {
-        setIsLoading(true);
-        const res = await getNotesForNotebook(notebookId);
-        setNotes(res.data);
-        if (res.data.length > 0) {
-          setCurrentNote(res.data[0]);
-        } else {
-          setCurrentNote(null);
-        }
-        setError(null);
-      } catch (err) {
-        console.error('Error al cargar las notas:', err);
-        setError('No se pudieron cargar las notas.');
-      } finally {
-        setIsLoading(false);
+  // 1. Cargar las notas del notebook
+  const loadNotes = useCallback(async () => {
+    if (!notebookId) {
+      return;
+    }
+    
+    console.log(`DEBUG: Cargando Notebook ID: ${notebookId}.`);
+    
+    try {
+      const response = await getNotesForNotebook(notebookId);
+      const fetchedNotes = response.data || []; 
+      console.log('DEBUG: Notas recibidas:', fetchedNotes);
+      
+      setNotes(fetchedNotes);
+      
+      if (fetchedNotes.length > 0) {
+        setActiveNote(fetchedNotes[0]);
+      } else {
+        setActiveNote(null);
       }
-    };
-    fetchNotes();
+    } catch (error) {
+      console.error("DEBUG: Error al cargar las notas:", error);
+    }
   }, [notebookId]);
 
-  const onNoteUpdated = (updatedNote) => {
-    setNotes(notes.map(note => note.id === updatedNote.id ? updatedNote : note));
-    if (currentNote && currentNote.id === updatedNote.id) {
-      setCurrentNote(updatedNote);
+  useEffect(() => {
+    loadNotes();
+  }, [loadNotes]);
+
+  // 2. Seleccionar una nota
+  const handleSelectNote = (note) => {
+    setActiveNote(note);
+  };
+
+  // 3. Crear una nueva nota
+  const handleCreateNote = async () => {
+    if (!notebookId) return;
+    try {
+      // --- CORRECCIÓN AQUÍ: Pasar argumentos separados, no un objeto ---
+      const response = await createNote("Nueva Nota", parseInt(notebookId));
+      
+      const newNote = response.data;
+      
+      setNotes(prevNotes => [newNote, ...prevNotes]);
+      setActiveNote(newNote);
+    } catch (error) {
+      console.error("Error al crear la nota:", error);
     }
   };
 
-  const onNoteCreated = (newNote) => {
-    setNotes([newNote, ...notes]);
-    setCurrentNote(newNote); 
+  // 4. Actualizar una nota (desde el editor)
+  const handleNoteUpdate = (updatedNote) => {
+    setNotes(prevNotes => prevNotes.map((note) => (note.id === updatedNote.id ? updatedNote : note)));
+    
+    if (activeNote && activeNote.id === updatedNote.id) {
+        setActiveNote(updatedNote);
+    }
   };
 
-  // --- CAMBIO: Nueva función para manejar la eliminación ---
+  // 5. Eliminar nota
   const handleDeleteNote = async (noteId) => {
-    // 1. Confirmación del usuario
-    if (!window.confirm("¿Estás seguro de que quieres eliminar esta nota? Esta acción no se puede deshacer.")) {
+    if (!window.confirm("¿Estás seguro de que quieres eliminar esta nota?")) {
       return;
     }
 
     try {
-      // 2. Llamada a la API
       await deleteNote(noteId);
 
-      // 3. Actualizar el estado local
       const newNotes = notes.filter((note) => note.id !== noteId);
       setNotes(newNotes);
 
-      // 4. Ajustar la nota activa
-      if (currentNote && currentNote.id === noteId) {
-        // Si la nota eliminada era la activa, selecciona la primera
-        // de la nueva lista, o null si la lista está vacía.
-        setCurrentNote(newNotes.length > 0 ? newNotes[0] : null);
+      if (activeNote && activeNote.id === noteId) {
+        setActiveNote(newNotes.length > 0 ? newNotes[0] : null);
       }
-    } catch (err) {
-      console.error('Error al eliminar la nota:', err);
-      alert('No se pudo eliminar la nota. Inténtalo de nuevo.');
+    } catch (error) {
+      console.error("Error al eliminar la nota:", error);
+      alert("No se pudo eliminar la nota. Inténtalo de nuevo.");
     }
   };
 
+  // 2. Envolver todo en DashboardLayout para mostrar el Header
   return (
     <DashboardLayout>
-      <div className="flex h-[calc(100vh-4.1rem)] w-full">
-        <div className="h-full w-1/4 max-w-sm overflow-y-auto border-r border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
-          <NoteList
-            notes={notes}
-            notebookId={Number(notebookId)}
-            currentNoteId={currentNote?.id}
-            onSelectNote={setCurrentNote}
-            onNoteCreated={onNoteCreated}
-            onDeleteNote={handleDeleteNote} // <-- 5. Pasamos la nueva prop
+      <div className="flex h-[calc(100vh-8rem)]"> {/* Ajustamos altura para el header */}
+        <NoteList
+          notes={notes}
+          activeNoteId={activeNote?.id}
+          onSelectNote={handleSelectNote}
+          onCreateNote={handleCreateNote}
+          onDeleteNote={handleDeleteNote}
+        />
+        
+        {activeNote && activeNote.id ? (
+          <NoteEditor
+            key={activeNote.id}
+            note={activeNote}
+            onNoteUpdated={handleNoteUpdate}
           />
-        </div>
-
-        <div className="h-full w-3/4 flex-1">
-          {isLoading && (
-            <div className="flex h-full items-center justify-center text-gray-500 dark:text-gray-400">
-              Cargando notas...
-            </div>
-          )}
-          {!isLoading && !error && currentNote && (
-            <NoteEditor
-              note={currentNote}
-              onNoteUpdated={onNoteUpdated}
-            />
-          )}
-          {!isLoading && !error && !currentNote && (
-            <div className="flex h-full flex-col items-center justify-center text-gray-500 dark:text-gray-400">
-              <p className="text-xl">No hay notas seleccionadas.</p>
-              <p>Selecciona una nota de la lista o crea una nueva.</p>
-            </div>
-          )}
-          {error && (
-             <div className="flex h-full items-center justify-center text-red-500">
-              {error}
-            </div>
-          )}
-        </div>
+        ) : (
+          <div className="flex-1 flex items-center justify-center p-8 text-gray-500 dark:text-gray-400 bg-surface-light dark:bg-surface-dark">
+            <p>Selecciona una nota para editar o crea una nueva.</p>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
 }
 
+export default NotebookDetailPage;

@@ -5,7 +5,7 @@ export default function NoteList({
   notes,
   activeNoteId,
   onSelectNote,
-  onNoteCreated,
+  onCreateNote,
   onDeleteNote,
 }) {
   return (
@@ -13,7 +13,7 @@ export default function NoteList({
       {/* Botón de Nueva Nota (Estilos Corregidos) */}
       <div className="p-4">
         <button
-          onClick={onNoteCreated}
+          onClick={onCreateNote}
           className="flex w-full items-center justify-center rounded-lg bg-primary px-4 py-2 text-white transition-all duration-200 hover:bg-opacity-90 dark:bg-accent1 dark:text-dark-bg dark:hover:bg-accent2"
         >
           <FiPlus className="mr-2" />
