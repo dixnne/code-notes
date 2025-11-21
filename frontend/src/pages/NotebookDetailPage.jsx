@@ -94,7 +94,7 @@ function NotebookDetailPage() {
   // 2. Envolver todo en DashboardLayout para mostrar el Header
   return (
     <DashboardLayout>
-      <div className="flex h-[calc(100vh-8rem)]"> {/* Ajustamos altura para el header */}
+      <div className="flex h-[calc(100vh-10rem)] w-full"> {/* Ajustamos altura para el header */}
         <NoteList
           notes={notes}
           activeNoteId={activeNote?.id}

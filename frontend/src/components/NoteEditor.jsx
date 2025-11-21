@@ -101,7 +101,7 @@ export default function NoteEditor({ note, onNoteUpdated }) {
   };
 
   return (
-    <div className="flex h-full flex-col bg-white dark:bg-gray-900">
+    <div className="flex h-full w-full flex-col bg-white dark:bg-gray-900">
       {/* Indicador de guardado */}
       <div className="flex h-8 items-center justify-end px-6 pt-2">
         {renderStatus()}
@@ -129,7 +129,8 @@ export default function NoteEditor({ note, onNoteUpdated }) {
           }}
           preview="live" 
           hideToolbar={false}
-          className="h-full"
+          height="100%"
+          width="100%"
           visiableDragbar={false}
         />
       </div>

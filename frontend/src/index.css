@@ -67,7 +67,8 @@
     @apply bg-light-card;
   }
   .dark .w-md-editor-input,
-  .dark .w-md-editor-preview {
+  .dark .w-md-editor-preview,
+  .dark .wmde-markdown {
     @apply bg-dark-card;
   }
   /* --- FIN DE LA CORRECCIÓN DE ALTURA Y COLOR --- */
