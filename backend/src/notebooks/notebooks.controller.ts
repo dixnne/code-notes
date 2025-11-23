@@ -4,42 +4,49 @@ import {
   Get,
   Post,
   Body,
+  Patch,
+  Param,
+  Delete,
   UseGuards,
-  Request,
+  Req,
+  ParseIntPipe,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
 import { NotebooksService } from './notebooks.service';
 import { CreateNotebookDto } from './dto/create-notebook.dto';
+import { UpdateNotebookDto } from './dto/update-notebook.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
-// Protegemos todo el controlador con nuestro JwtAuthGuard
-// Solo los usuarios logueados podrán acceder a estas rutas
 @UseGuards(JwtAuthGuard)
 @Controller('notebooks')
 export class NotebooksController {
   constructor(private readonly notebooksService: NotebooksService) {}
 
-  /**
-   * Endpoint para crear un nuevo notebook.
-   * El 'req.user' se obtiene del token JWT verificado por el Guard.
-   */
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(
-    @Body() createNotebookDto: CreateNotebookDto,
-    @Request() req, // Obtenemos el objeto Request
-  ) {
-    // Pasamos el ID del usuario (obtenido del token) y el DTO al servicio
+  create(@Body() createNotebookDto: CreateNotebookDto, @Req() req) {
     return this.notebooksService.createNotebook(req.user.id, createNotebookDto);
   }
 
-  /**
-   * Endpoint para obtener todos los notebooks del usuario logueado.
-   */
   @Get()
-  findAll(@Request() req) {
-    // Obtenemos todos los notebooks que pertenecen al usuario
+  findAll(@Req() req) {
     return this.notebooksService.getNotebooksForUser(req.user.id);
+  }
+
+  // --- NUEVO: Endpoint para Renombrar ---
+  @Patch(':id')
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateNotebookDto: UpdateNotebookDto,
+    @Req() req,
+  ) {
+    return this.notebooksService.update(id, req.user.id, updateNotebookDto);
+  }
+
+  // --- NUEVO: Endpoint para Eliminar ---
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number, @Req() req) {
+    return this.notebooksService.remove(id, req.user.id);
   }
 }
