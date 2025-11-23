@@ -1,4 +1,3 @@
-// backend/src/notes/dto/update-note.dto.ts
 import { IsOptional, IsString, Length } from 'class-validator';
 
 export class UpdateNoteDto {
@@ -10,4 +9,8 @@ export class UpdateNoteDto {
   @IsOptional()
   @IsString()
   content?: string;
+
+  @IsOptional()
+  @IsString()
+  language?: string; // Permitir actualizar el lenguaje
 }

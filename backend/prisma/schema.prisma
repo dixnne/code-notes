@@ -26,6 +26,25 @@ model Notebook {
   updatedAt   DateTime @updatedAt
   owner       User     @relation(fields: [ownerId], references: [id])
   ownerId     Int
+  
+  folders     Folder[]
+  notes       Note[]
+}
+
+model Folder {
+  id          Int      @id @default(autoincrement())
+  name        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  notebook    Notebook @relation(fields: [notebookId], references: [id], onDelete: Cascade)
+  notebookId  Int
+  
+  // --- NUEVO: Relación Recursiva (Carpetas Anidadas) ---
+  parentId    Int?
+  parent      Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Folder[] @relation("FolderHierarchy")
+  
   notes       Note[]
 }
 
@@ -33,15 +52,17 @@ model Note {
   id        Int     @id @default(autoincrement())
   title     String
   content   String? @default("")
-  
-  // --- CAMBIO: Añadimos el tipo de nota ---
-  // Valores posibles: 'markdown', 'mermaid', 'code'
   type      String  @default("markdown")
+  language  String? @default("javascript")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  notebook  Notebook @relation(fields: [notebookId], references: [id])
+  
+  notebook   Notebook @relation(fields: [notebookId], references: [id], onDelete: Cascade)
   notebookId Int
+  
+  folder     Folder?  @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  folderId   Int?
 }
 
 // Modelos futuros para tags y colaboración (aún no implementados)

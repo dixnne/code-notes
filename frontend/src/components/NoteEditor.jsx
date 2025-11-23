@@ -1,29 +1,19 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { updateNote } from '../services/api';
 import { useTheme } from '../contexts/ThemeContext';
-
-// Editores
 import ReactMDEditor from '@uiw/react-md-editor';
 import CodeMirror from '@uiw/react-codemirror';
-
-// Lenguajes y Temas para CodeMirror
 import { javascript } from '@codemirror/lang-javascript';
 import { python } from '@codemirror/lang-python';
 import { html } from '@codemirror/lang-html';
 import { githubLight, githubDark } from '@uiw/codemirror-theme-github';
+import { FiCode, FiFileText, FiSave } from 'react-icons/fi';
 
-import { FiCode, FiFileText } from 'react-icons/fi';
-
-// Hook de "debounce"
 function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value);
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-    return () => {
-      clearTimeout(handler);
-    };
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
   }, [value, delay]);
   return debouncedValue;
 }
@@ -32,23 +22,22 @@ export default function NoteEditor({ note, onNoteUpdated }) {
   const { theme } = useTheme(); 
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content || '');
+  // Estado para el lenguaje
+  const [language, setLanguage] = useState(note.language || 'javascript');
   const [status, setStatus] = useState('idle');
-
   const isInitialMount = useRef(true);
 
-  // Sincronizar el estado local si la nota seleccionada cambia
   useEffect(() => {
     setTitle(note.title);
     setContent(note.content || '');
+    setLanguage(note.language || 'javascript');
     setStatus('idle');
     isInitialMount.current = true;
-  }, [note.id]); // Solo al cambiar de ID
+  }, [note.id]);
 
-  // Valores "debounced"
   const debouncedTitle = useDebounce(title, 1000);
   const debouncedContent = useDebounce(content, 1000);
 
-  // Efecto para guardar automáticamente
   const handleSave = useCallback(async (saveData) => {
     if (!note || !note.id) return;
     setStatus('saving');
@@ -57,12 +46,11 @@ export default function NoteEditor({ note, onNoteUpdated }) {
       onNoteUpdated(res.data);
       setStatus('idle');
     } catch (err) {
-      console.error('Error al guardar la nota:', err);
+      console.error('Error al guardar:', err);
       setStatus('error');
     }
   }, [note.id, onNoteUpdated]);
 
-  // Efecto de guardado unificado
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -71,95 +59,83 @@ export default function NoteEditor({ note, onNoteUpdated }) {
     const safeContent = content || '';
     const noteContent = note.content || '';
     
-    // Guardamos si hay cambios
-    if (debouncedTitle !== note.title || safeContent !== noteContent) {
-      handleSave({ title: debouncedTitle, content: safeContent });
+    // Guardamos si cambia título, contenido O lenguaje
+    if (debouncedTitle !== note.title || safeContent !== noteContent || language !== note.language) {
+      handleSave({ title: debouncedTitle, content: safeContent, language });
     }
-  }, [debouncedTitle, debouncedContent, handleSave]);
+  }, [debouncedTitle, debouncedContent, language, handleSave]);
 
-  const renderStatus = () => {
-    if (status === 'saving') {
-      return <span className="text-sm italic text-text-secondary">Guardando...</span>;
-    }
-    if (status === 'error') {
-      return <span className="text-sm font-semibold text-red-500">Error al guardar</span>;
-    }
-    return <span className="h-5 text-sm">&nbsp;</span>;
+  // Extensiones dinámicas
+  const getExtensions = () => {
+      switch(language) {
+          case 'python': return [python()];
+          case 'html': return [html()];
+          default: return [javascript()];
+      }
   };
 
-  // --- RENDERIZADORES ---
-
-  // 1. EDITOR DE CÓDIGO
   const renderCodeEditor = () => (
-    <div className="flex-1 h-full w-full overflow-hidden border-t border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark">
+    <div className="flex-1 h-full overflow-hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
       <CodeMirror
         value={content}
         height="100%"
-        width="100%"
         theme={theme === 'dark' ? githubDark : githubLight}
-        extensions={[javascript(), python(), html()]} 
-        onChange={(val) => {
-            setContent(val);
-            if (status === 'error') setStatus('idle');
-        }}
+        extensions={getExtensions()} 
+        onChange={(val) => { setContent(val); if (status === 'error') setStatus('idle'); }}
         className="h-full text-base"
       />
     </div>
   );
 
-  // 2. EDITOR MARKDOWN
   const renderMarkdownEditor = () => (
-    <div className="flex-1 h-full w-full overflow-hidden" data-color-mode={theme}>
+    <div className="flex-1 overflow-hidden" data-color-mode={theme}>
       <ReactMDEditor
         value={content}
-        onChange={(newContent) => {
-          setContent(newContent || ''); 
-          if (status === 'error') setStatus('idle');
-        }}
+        onChange={(val) => { setContent(val || ''); if (status === 'error') setStatus('idle'); }}
         preview="live" 
         hideToolbar={false}
         className="h-full"
-        height="100%"
-        width="100%"
         visiableDragbar={false}
       />
     </div>
   );
 
-  // Icono según el tipo
-  const getTypeInfo = () => {
-    if (note.type === 'code') return { icon: <FiCode className="mr-2" />, label: "Fragmento de Código" };
-    return { icon: <FiFileText className="mr-2" />, label: "Nota Markdown" };
-  };
-
-  const typeInfo = getTypeInfo();
-
   return (
-    <div className="flex h-full w-full flex-col ">
-      {/* Header del Editor */}
-      <div className="flex items-center justify-between px-6 py-2 bg-white dark:bg-gray-900 border-b border-border-light dark:border-border-dark">
-        <div className="flex items-center text-sm text-text-secondary font-medium bg-primary text-white px-3 py-1 rounded-full">
-            {typeInfo.icon}
-            {typeInfo.label}
+    <div className="flex h-full w-full flex-col bg-white dark:bg-gray-900">
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-2 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-2">
+            <div className={`flex items-center text-sm font-medium px-3 py-1 rounded-full ${note.type === 'code' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
+                {note.type === 'code' ? <FiCode className="mr-2" /> : <FiFileText className="mr-2" />}
+                {note.type === 'code' ? "Código" : "Markdown"}
+            </div>
+            
+            {/* --- SELECTOR DE LENGUAJE (Reintroducido) --- */}
+            {note.type === 'code' && (
+                <select 
+                    value={language} 
+                    onChange={(e) => setLanguage(e.target.value)}
+                    className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-transparent text-gray-700 dark:text-gray-300 focus:outline-none cursor-pointer hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+                >
+                    <option value="javascript">JavaScript</option>
+                    <option value="python">Python</option>
+                    <option value="html">HTML/XML</option>
+                </select>
+            )}
         </div>
         <div className="flex items-center gap-4">
-            {renderStatus()}
+            {status === 'saving' ? <span className="text-sm italic text-gray-500">Guardando...</span> : <span className="h-5"></span>}
         </div>
       </div>
 
-      {/* Editor de Título */}
       <input
         type="text"
         value={title}
-        onChange={(e) => {
-          setTitle(e.target.value);
-          if (status === 'error') setStatus('idle');
-        }}
+        onChange={(e) => { setTitle(e.target.value); if (status === 'error') setStatus('idle'); }}
         placeholder="Título de la nota"
-        className="border-b border-border-light bg-white dark:border-gray-700 dark:bg-gray-900 dark:text-white px-6 py-4 text-3xl font-bold text-text-primary outline-none dark:border-border-dark placeholder-text-secondary/50"
+        className="border-b border-gray-200 bg-transparent px-6 py-4 text-3xl font-bold text-gray-800 outline-none dark:border-gray-700 dark:text-white"
       />
 
-      {/* Renderizado Condicional del Editor */}
       {note.type === 'code' ? renderCodeEditor() : renderMarkdownEditor()}
     </div>
   );
