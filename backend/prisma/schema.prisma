@@ -27,22 +27,21 @@ model Notebook {
   owner       User     @relation(fields: [ownerId], references: [id])
   ownerId     Int
   notes       Note[]
-  // collaborators Collaborator[] // Implementación futura
 }
 
 model Note {
   id        Int     @id @default(autoincrement())
   title     String
-  
-  // --- CAMBIO AQUÍ ---
-  // Añadido el campo para el contenido de la nota
   content   String? @default("")
   
+  // --- CAMBIO: Añadimos el tipo de nota ---
+  // Valores posibles: 'markdown', 'mermaid', 'code'
+  type      String  @default("markdown")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   notebook  Notebook @relation(fields: [notebookId], references: [id])
   notebookId Int
-  // tags      NoteTag[] // Implementación futura
 }
 
 // Modelos futuros para tags y colaboración (aún no implementados)

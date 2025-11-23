@@ -1,37 +1,42 @@
 // frontend/tailwind.config.js
+
 /** @type {import('tailwindcss').Config} */
 export default {
-  // 1. Habilitamos el modo oscuro basado en una clase en el tag <html>
-  darkMode: 'class',
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  darkMode: 'class', // Habilita el modo oscuro mediante la clase 'dark'
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
   theme: {
     extend: {
-      colors: {
-        // Paleta de colores principal
-        primary: '#00809D',
-        secondary: '#FCECdd',
-        accent1: '#FF7601',
-        accent2: '#F3A26D',
-
-        // 2. Definimos colores semánticos para ambos modos
-        // Modo Oscuro
-        'dark-bg': '#1A212D',
-        'dark-card': '#2A3447',
-        'dark-text': '#FCECdd',
-        'dark-text-secondary': '#a0a0a0',
-
-        // Modo Claro
-        'light-bg': '#FCECdd', // Usamos el secundario como fondo claro
-        'light-card': '#FFFFFF',
-        'light-text': '#1A212D',
-        'light-text-secondary': '#5A6477',
-      },
       fontFamily: {
+        // Fuente principal para títulos y marca
         display: ['"Epunda Slab"', 'serif'],
+        // Fuente para el cuerpo del texto
         sans: ['"Roboto"', 'sans-serif'],
+      },
+      colors: {
+        // --- COLORES DE MARCA ---
+        primary: '#00809D',   // Teal principal
+        secondary: '#FCECdd', // Crema claro
+        accent1: '#FF7601',   // Naranja vibrante
+        accent2: '#F3A26D',   // Naranja suave
+
+        // --- COLORES SEMÁNTICOS (MODO CLARO) ---
+        'light-bg': '#FCECdd',       // Fondo principal (Crema)
+        'light-card': '#FFFFFF',     // Fondo de tarjetas/paneles (Blanco)
+        'light-text': '#1A212D',     // Texto principal (Oscuro)
+        'light-text-secondary': '#5A6477', // Texto secundario (Gris azulado)
+
+        // --- COLORES SEMÁNTICOS (MODO OSCURO) ---
+        'dark-bg': '#1A212D',        // Fondo principal (Azul muy oscuro)
+        'dark-card': '#2A3447',      // Fondo de tarjetas/paneles (Azul grisáceo)
+        'dark-text': '#FCECdd',      // Texto principal (Crema)
+        'dark-text-secondary': '#A0A0A0', // Texto secundario (Gris claro)
       },
     },
   },
-  plugins: [],
-};
-
+  plugins: [
+    require('@tailwindcss/typography'), // Necesario para renderizar Markdown correctamente
+  ],
+}

@@ -5,12 +5,23 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    // Configuración del proxy para el desarrollo
     proxy: {
-      // Redirigir las peticiones que empiecen por /api al backend
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
+      },
+    },
+  },
+  build: {
+    sourcemap: false,
+    chunkSizeWarningLimit: 1600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Mantenemos la separación de vendor y editor para optimizar
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          editor: ['@uiw/react-md-editor', '@uiw/react-codemirror'],
+        },
       },
     },
   },

@@ -1,5 +1,5 @@
 // backend/src/notes/dto/create-note.dto.ts
-import { IsNotEmpty, IsInt, IsString, Length } from 'class-validator';
+import { IsNotEmpty, IsInt, IsString, Length, IsOptional, IsIn } from 'class-validator';
 
 export class CreateNoteDto {
   @IsNotEmpty()
@@ -10,4 +10,10 @@ export class CreateNoteDto {
   @IsNotEmpty()
   @IsInt()
   notebookId: number;
+
+  // --- CAMBIO: Validamos el tipo ---
+  @IsOptional()
+  @IsString()
+  @IsIn(['markdown', 'mermaid', 'code'])
+  type?: string;
 }
