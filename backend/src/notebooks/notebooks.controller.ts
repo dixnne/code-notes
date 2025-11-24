@@ -16,6 +16,7 @@ import {
 import { NotebooksService } from './notebooks.service';
 import { CreateNotebookDto } from './dto/create-notebook.dto';
 import { UpdateNotebookDto } from './dto/update-notebook.dto';
+import { ShareNotebookDto } from './dto/share-notebook.dto'; // Importar nuevo DTO
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @UseGuards(JwtAuthGuard)
@@ -34,7 +35,6 @@ export class NotebooksController {
     return this.notebooksService.getNotebooksForUser(req.user.id);
   }
 
-  // --- NUEVO: Endpoint para Renombrar ---
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -44,9 +44,18 @@ export class NotebooksController {
     return this.notebooksService.update(id, req.user.id, updateNotebookDto);
   }
 
-  // --- NUEVO: Endpoint para Eliminar ---
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number, @Req() req) {
     return this.notebooksService.remove(id, req.user.id);
+  }
+
+  // --- NUEVO: Endpoint para Compartir ---
+  @Post(':id/share')
+  share(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() shareNotebookDto: ShareNotebookDto,
+    @Req() req
+  ) {
+    return this.notebooksService.shareNotebook(id, req.user.id, shareNotebookDto.email);
   }
 }

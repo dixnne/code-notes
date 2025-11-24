@@ -1,9 +1,17 @@
+// frontend/src/pages/NotebookDetailPage.jsx
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getNotesForNotebook, createNote, deleteNote, getFoldersForNotebook } from '../services/api';
+import { 
+  getNotesForNotebook, 
+  createNote, 
+  deleteNote, 
+  getFoldersForNotebook,
+  getNotebooks // 1. Importamos para obtener detalles del notebook
+} from '../services/api';
 import NoteList from '../components/NoteList';
 import NoteEditor from '../components/NoteEditor';
 import DashboardLayout from '../components/DashboardLayout';
+import ShareNotebookModal from '../components/ShareNotebookModal'; // 2. Importar el modal
 import { FiChevronLeft, FiShare2, FiTag, FiSidebar } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -13,23 +21,34 @@ export default function NotebookDetailPage() {
   const [folders, setFolders] = useState([]);
   const [activeNote, setActiveNote] = useState(null);
   
-  // --- ESTADOS DE LA UI ---
-  // Usamos useRef para el ancho para evitar re-renders mientras arrastras
+  // --- NUEVOS ESTADOS ---
+  const [currentNotebook, setCurrentNotebook] = useState(null); // Guardar info del notebook
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false); // Controlar el modal
+  
+  // Estados de UI
   const sidebarRef = useRef(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isResizing, setIsResizing] = useState(false);
 
-  // Carga de datos (sin cambios)
+  // Carga de datos
   const loadData = useCallback(async () => {
     if (!notebookId) return;
+    console.log(`DEBUG: Cargando datos Notebook ID: ${notebookId}.`);
     try {
-      const [notesRes, foldersRes] = await Promise.all([
+      // 3. Cargamos notas, carpetas Y la lista de notebooks para encontrar este
+      const [notesRes, foldersRes, notebooksRes] = await Promise.all([
         getNotesForNotebook(notebookId),
-        getFoldersForNotebook(notebookId)
+        getFoldersForNotebook(notebookId),
+        getNotebooks() // Traemos todos para buscar el actual (MVP)
       ]);
 
       const fetchedNotes = notesRes.data || []; 
       const fetchedFolders = foldersRes.data || [];
+      const allNotebooks = notebooksRes.data || [];
+
+      // Encontrar el notebook actual para tener su título y dueño
+      const foundNotebook = allNotebooks.find(n => n.id === parseInt(notebookId));
+      setCurrentNotebook(foundNotebook || null);
       
       setNotes(fetchedNotes);
       setFolders(fetchedFolders);
@@ -46,23 +65,19 @@ export default function NotebookDetailPage() {
     loadData();
   }, [loadData]);
 
-  // --- LÓGICA DE REDIMENSIONADO OPTIMIZADA ---
+  // --- LÓGICA DE REDIMENSIONADO ---
   const startResizing = useCallback((e) => {
     setIsResizing(true);
-    e.preventDefault(); // Evitar selección de texto
+    e.preventDefault(); 
     
     const startX = e.clientX;
     const startWidth = sidebarRef.current ? sidebarRef.current.getBoundingClientRect().width : 300;
 
     const doDrag = (dragEvent) => {
-        // Calculamos la diferencia
         let newWidth = startWidth + (dragEvent.clientX - startX);
-        
-        // Aplicamos límites (Mínimo 200px, Máximo 450px)
         if (newWidth < 200) newWidth = 200;
-        if (newWidth > 600) newWidth = 600; // Límite superior razonable
+        if (newWidth > 600) newWidth = 600; 
 
-        // MANIPULACIÓN DIRECTA DEL DOM (Súper rápido, sin re-renders de React)
         if (sidebarRef.current) {
             sidebarRef.current.style.width = `${newWidth}px`;
         }
@@ -72,20 +87,15 @@ export default function NotebookDetailPage() {
         setIsResizing(false);
         document.removeEventListener('mousemove', doDrag);
         document.removeEventListener('mouseup', stopDrag);
-        // Restaurar el cursor del body
         document.body.style.cursor = 'default';
         document.body.style.userSelect = 'auto';
     };
 
-    // Añadir listeners al documento para seguir el mouse fuera del div
     document.addEventListener('mousemove', doDrag);
     document.addEventListener('mouseup', stopDrag);
-    
-    // Cambiar cursor globalmente para mejor UX durante arrastre
     document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none'; // Evitar seleccionar texto al arrastrar
+    document.body.style.userSelect = 'none'; 
   }, []);
-  // --- FIN LÓGICA REDIMENSIONADO ---
 
   const handleSelectNote = (note) => setActiveNote(note);
 
@@ -148,6 +158,13 @@ export default function NotebookDetailPage() {
             <FiChevronLeft className="h-4 w-4" />
             Volver
           </Link>
+          
+          {/* Mostrar título del notebook si está cargado */}
+          {currentNotebook && (
+             <span className="ml-2 text-sm font-semibold text-text-primary dark:text-text-primary-dark hidden sm:inline">
+                / {currentNotebook.title}
+             </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -155,7 +172,13 @@ export default function NotebookDetailPage() {
             <FiTag className="h-4 w-4" />
             Tags
           </button>
-          <button className="flex items-center gap-2 rounded-md bg-accent1/10 px-3 py-1.5 text-sm font-medium text-accent1 transition-colors hover:bg-accent1/20">
+          
+          {/* 4. Botón de Compartir Conectado */}
+          <button 
+            onClick={() => setIsShareModalOpen(true)}
+            disabled={!currentNotebook}
+            className="flex items-center gap-2 rounded-md bg-accent1/10 px-3 py-1.5 text-sm font-medium text-accent1 transition-colors hover:bg-accent1/20 disabled:opacity-50"
+          >
             <FiShare2 className="h-4 w-4" />
             Compartir
           </button>
@@ -169,7 +192,7 @@ export default function NotebookDetailPage() {
         <div 
             ref={sidebarRef}
             className={`relative flex-shrink-0 h-full bg-surface-light dark:bg-surface-dark ${!isSidebarOpen ? 'hidden' : ''}`}
-            style={{ width: '300px' }} // Ancho inicial por defecto
+            style={{ width: '300px' }} 
         >
             <NoteList
                 notes={notes}
@@ -182,8 +205,6 @@ export default function NotebookDetailPage() {
                 onRefresh={loadData}
             />
             
-            {/* --- MANIJA DE REDIMENSIONADO (RESIZER) --- */}
-            {/* Es un div transparente de 4px sobre el borde derecho */}
             <div
                 className={`absolute top-0 right-0 w-1 h-full cursor-col-resize z-20 hover:bg-primary/50 transition-colors
                     ${isResizing ? 'bg-primary w-1' : 'bg-transparent'} 
@@ -207,6 +228,13 @@ export default function NotebookDetailPage() {
           )}
         </div>
       </div>
+
+      {/* 5. Modal de Compartir */}
+      <ShareNotebookModal 
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        notebook={currentNotebook}
+      />
     </DashboardLayout>
   );
 }

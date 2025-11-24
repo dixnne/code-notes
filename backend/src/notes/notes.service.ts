@@ -1,3 +1,4 @@
+// backend/src/notes/notes.service.ts
 import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateNoteDto } from './dto/create-note.dto';
@@ -7,16 +8,31 @@ import { UpdateNoteDto } from './dto/update-note.dto';
 export class NotesService {
   constructor(private prisma: PrismaService) {}
 
-  async findAllByNotebook(notebookId: number, userId: number) {
-    const notebook = await this.prisma.notebook.findFirst({
-      where: { id: notebookId, ownerId: userId },
+  // Método auxiliar para verificar acceso (Dueño O Colaborador)
+  private async checkAccess(notebookId: number, userId: number) {
+    const notebook = await this.prisma.notebook.findUnique({
+        where: { id: notebookId },
+        include: { collaborators: true } // Incluir colaboradores para verificar
     });
+
+    if (!notebook) return null;
+
+    const isOwner = notebook.ownerId === userId;
+    const isCollaborator = notebook.collaborators.some(c => c.userId === userId);
+
+    if (!isOwner && !isCollaborator) {
+        return null; // Sin acceso
+    }
+
+    return notebook;
+  }
+
+  async findAllByNotebook(notebookId: number, userId: number) {
+    // Usamos el helper para verificar acceso
+    const notebook = await this.checkAccess(notebookId, userId);
+    
     if (!notebook) throw new ForbiddenException('No tienes acceso a este notebook.');
     
-    // Devolvemos solo las notas que están en la RAÍZ (folderId es null)
-    // Las notas dentro de carpetas se obtienen a través del servicio de carpetas
-    // o podríamos devolver todas y filtrar en el frontend. 
-    // Para simplificar, devolvemos TODAS y el frontend las organiza.
     return this.prisma.note.findMany({
       where: { notebookId: notebookId },
       orderBy: { updatedAt: 'desc' },
@@ -26,27 +42,22 @@ export class NotesService {
   async create(dto: CreateNoteDto, userId: number) {
     const { title, notebookId, type, folderId, language } = dto;
 
-    const notebook = await this.prisma.notebook.findFirst({
-      where: { id: notebookId, ownerId: userId },
-    });
+    // Verificar acceso
+    const notebook = await this.checkAccess(notebookId, userId);
+    if (!notebook) throw new ForbiddenException('No tienes permiso para añadir notas.');
 
-    if (!notebook) {
-      throw new ForbiddenException('No puedes añadir notas a un notebook que no te pertenece.');
-    }
-
-    // Validar que la carpeta pertenece al notebook (si se proporciona folderId)
     if (folderId) {
       const folder = await this.prisma.folder.findFirst({
         where: { id: folderId, notebookId: notebookId },
       });
-      if (!folder) throw new NotFoundException('La carpeta especificada no existe en este notebook.');
+      if (!folder) throw new NotFoundException('Carpeta no encontrada.');
     }
 
     return this.prisma.note.create({
       data: {
         title,
         notebookId,
-        folderId, // Guardar la relación con la carpeta
+        folderId,
         content: '',
         type: type || 'markdown',
         language: language || 'javascript',
@@ -57,10 +68,13 @@ export class NotesService {
   async update(noteId: number, userId: number, dto: UpdateNoteDto) {
     const note = await this.prisma.note.findUnique({
       where: { id: noteId },
-      include: { notebook: true },
+      include: { notebook: true }, // Necesitamos el notebookId para verificar
     });
     if (!note) throw new NotFoundException('Nota no encontrada');
-    if (note.notebook.ownerId !== userId) throw new ForbiddenException('No tienes permiso.');
+
+    // Verificar acceso al notebook padre
+    const notebook = await this.checkAccess(note.notebookId, userId);
+    if (!notebook) throw new ForbiddenException('No tienes permiso para modificar esta nota.');
 
     return this.prisma.note.update({
       where: { id: noteId },
@@ -74,7 +88,10 @@ export class NotesService {
       include: { notebook: true },
     });
     if (!note) throw new NotFoundException('Nota no encontrada');
-    if (note.notebook.ownerId !== userId) throw new ForbiddenException('No tienes permiso.');
+
+    // Verificar acceso al notebook padre
+    const notebook = await this.checkAccess(note.notebookId, userId);
+    if (!notebook) throw new ForbiddenException('No tienes permiso para eliminar esta nota.');
 
     return this.prisma.note.delete({ where: { id: noteId } });
   }

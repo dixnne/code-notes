@@ -4,7 +4,7 @@ import axios from 'axios';
 export const apiClient = axios.create({
   baseURL: 'http://localhost:8080/api',
 });
-// ... (interceptores existentes) ...
+
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -15,16 +15,17 @@ apiClient.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
-// ... (auth y otros servicios existentes) ...
+
 export const apiRegister = (username, email, password) => apiClient.post('/auth/register', { username, email, password });
 export const apiGetProfile = () => apiClient.get('/auth/profile');
 
 // --- Notebooks ---
 export const getNotebooks = () => apiClient.get('/notebooks');
 export const createNotebook = (title) => apiClient.post('/notebooks', { title });
-// Nuevos métodos:
 export const updateNotebook = (id, title) => apiClient.patch(`/notebooks/${id}`, { title });
 export const deleteNotebook = (id) => apiClient.delete(`/notebooks/${id}`);
+// NUEVO: Compartir
+export const shareNotebook = (id, email) => apiClient.post(`/notebooks/${id}/share`, { email });
 
 
 // --- Notas ---

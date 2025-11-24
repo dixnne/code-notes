@@ -1,14 +1,17 @@
 // backend/src/notebooks/notebooks.service.ts
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateNotebookDto } from './dto/create-notebook.dto';
 import { UpdateNotebookDto } from './dto/update-notebook.dto';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class NotebooksService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private usersService: UsersService // Inyectar servicio de usuarios
+  ) {}
 
-  // ... (create y getNotebooksForUser existentes) ...
   async createNotebook(userId: number, createNotebookDto: CreateNotebookDto) {
     return this.prisma.notebook.create({
       data: {
@@ -18,53 +21,90 @@ export class NotebooksService {
     });
   }
 
+  // --- ACTUALIZADO: Obtener propios Y compartidos ---
   async getNotebooksForUser(userId: number) {
     return this.prisma.notebook.findMany({
-      where: { ownerId: userId },
+      where: {
+        OR: [
+          { ownerId: userId }, // Notebooks propios
+          { 
+            collaborators: { // Notebooks donde soy colaborador
+              some: { userId: userId } 
+            } 
+          }
+        ]
+      },
+      include: {
+        owner: { // Incluir datos del dueño para mostrar "Compartido por..."
+            select: { id: true, username: true, email: true }
+        },
+        collaborators: true // Para saber si soy colaborador
+      },
       orderBy: { updatedAt: 'desc' },
     });
   }
 
-  // --- NUEVO: Actualizar Notebook ---
   async update(id: number, userId: number, updateNotebookDto: UpdateNotebookDto) {
-    // 1. Verificar existencia y propiedad
-    const notebook = await this.prisma.notebook.findUnique({
-      where: { id },
-    });
+    const notebook = await this.prisma.notebook.findUnique({ where: { id } });
+    if (!notebook) throw new NotFoundException('Notebook no encontrado');
 
-    if (!notebook) {
-      throw new NotFoundException('Notebook no encontrado');
-    }
-
+    // Solo el dueño puede renombrar
     if (notebook.ownerId !== userId) {
-      throw new ForbiddenException('No tienes permiso para editar este notebook');
+      throw new ForbiddenException('Solo el propietario puede renombrar este notebook');
     }
 
-    // 2. Actualizar
     return this.prisma.notebook.update({
       where: { id },
       data: updateNotebookDto,
     });
   }
 
-  // --- NUEVO: Eliminar Notebook ---
   async remove(id: number, userId: number) {
-    // 1. Verificar existencia y propiedad
-    const notebook = await this.prisma.notebook.findUnique({
-      where: { id },
-    });
+    const notebook = await this.prisma.notebook.findUnique({ where: { id } });
+    if (!notebook) throw new NotFoundException('Notebook no encontrado');
 
-    if (!notebook) {
-      throw new NotFoundException('Notebook no encontrado');
-    }
-
+    // Solo el dueño puede eliminar
     if (notebook.ownerId !== userId) {
-      throw new ForbiddenException('No tienes permiso para eliminar este notebook');
+      throw new ForbiddenException('Solo el propietario puede eliminar este notebook');
     }
 
-    // 2. Eliminar (El delete cascade de Prisma borrará notas y carpetas)
-    return this.prisma.notebook.delete({
-      where: { id },
-    });
+    return this.prisma.notebook.delete({ where: { id } });
+  }
+
+  // --- NUEVO: Compartir Notebook ---
+  async shareNotebook(notebookId: number, ownerId: number, emailToShare: string) {
+    // 1. Verificar que el notebook existe y soy el dueño
+    const notebook = await this.prisma.notebook.findUnique({ where: { id: notebookId } });
+    if (!notebook) throw new NotFoundException('Notebook no encontrado');
+    
+    if (notebook.ownerId !== ownerId) {
+      throw new ForbiddenException('Solo el propietario puede compartir este notebook');
+    }
+
+    // 2. Buscar al usuario destino
+    const userToShare = await this.usersService.findOneByEmail(emailToShare);
+    if (!userToShare) {
+      throw new NotFoundException('Usuario no encontrado con ese email');
+    }
+
+    if (userToShare.id === ownerId) {
+      throw new BadRequestException('No puedes compartir el notebook contigo mismo');
+    }
+
+    // 3. Crear la colaboración (si ya existe, Prisma lanzará error de unique constraint, lo capturamos)
+    try {
+        return await this.prisma.collaborator.create({
+            data: {
+                notebookId,
+                userId: userToShare.id,
+                permission: 'EDITOR' // Por defecto
+            }
+        });
+    } catch (error) {
+        if (error.code === 'P2002') {
+            throw new BadRequestException('Este usuario ya es colaborador de este notebook');
+        }
+        throw error;
+    }
   }
 }

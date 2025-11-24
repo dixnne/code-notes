@@ -10,13 +10,16 @@ generator client {
 }
 
 model User {
-  id        Int        @id @default(autoincrement())
-  email     String     @unique
-  username  String
-  password  String
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  notebooks Notebook[]
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  username      String
+  password      String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  // Relaciones
+  notebooks     Notebook[]     // Notebooks que posee (Owner)
+  collaborations Collaborator[] // Notebooks donde colabora
 }
 
 model Notebook {
@@ -24,11 +27,38 @@ model Notebook {
   title       String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  
+  // Propietario
   owner       User     @relation(fields: [ownerId], references: [id])
   ownerId     Int
   
+  // Contenido
   folders     Folder[]
   notes       Note[]
+  
+  // Colaboradores (Nueva Relación)
+  collaborators Collaborator[]
+}
+
+// --- NUEVO MODELO: Colaboradores ---
+model Collaborator {
+  id         Int      @id @default(autoincrement())
+  
+  // Quién colabora
+  user       User     @relation(fields: [userId], references: [id])
+  userId     Int
+  
+  // En qué notebook
+  notebook   Notebook @relation(fields: [notebookId], references: [id], onDelete: Cascade)
+  notebookId Int
+  
+  // Permisos (Por ahora default a EDITOR para simplificar)
+  permission String   @default("EDITOR") // "VIEWER", "EDITOR"
+  
+  createdAt  DateTime @default(now())
+
+  // Asegura que un usuario no sea colaborador duplicado en el mismo notebook
+  @@unique([userId, notebookId])
 }
 
 model Folder {
@@ -40,7 +70,6 @@ model Folder {
   notebook    Notebook @relation(fields: [notebookId], references: [id], onDelete: Cascade)
   notebookId  Int
   
-  // --- NUEVO: Relación Recursiva (Carpetas Anidadas) ---
   parentId    Int?
   parent      Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
   children    Folder[] @relation("FolderHierarchy")
@@ -64,33 +93,3 @@ model Note {
   folder     Folder?  @relation(fields: [folderId], references: [id], onDelete: Cascade)
   folderId   Int?
 }
-
-// Modelos futuros para tags y colaboración (aún no implementados)
-// --- CORRECCIÓN AQUÍ ---
-// Se han comentado las líneas una por una
-// model Tag {
-//   id      Int       @id @default(autoincrement())
-//   name    String    @unique
-//   notes   NoteTag[]
-// }
-
-// model NoteTag {
-//   note   Note @relation(fields: [noteId], references: [id])
-//   noteId Int
-//   tag    Tag  @relation(fields: [tagId], references: [id])
-//   tagId  Int
-
-//   @@id([noteId, tagId])
-// }
-
-// model Collaborator {
-//   id         Int      @id @default(autoincrement())
-//   user       User     @relation(fields: [userId], references: [id])
-//   userId     Int
-//   notebook   Notebook @relation(fields: [notebookId], references: [id])
-//   notebookId Int
-//   permission String // "VIEWER" o "EDITOR"
-
-//   @@unique([userId, notebookId])
-// }
-
