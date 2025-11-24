@@ -7,7 +7,8 @@ import { javascript } from '@codemirror/lang-javascript';
 import { python } from '@codemirror/lang-python';
 import { html } from '@codemirror/lang-html';
 import { githubLight, githubDark } from '@uiw/codemirror-theme-github';
-import { FiCode, FiFileText, FiSave } from 'react-icons/fi';
+import { FiCode, FiFileText } from 'react-icons/fi';
+import TagInput from './TagInput'; 
 
 function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -18,12 +19,14 @@ function useDebounce(value, delay) {
   return debouncedValue;
 }
 
-export default function NoteEditor({ note, onNoteUpdated }) {
+// --- CAMBIO: Recibimos 'availableTags' como prop ---
+export default function NoteEditor({ note, onNoteUpdated, availableTags = [] }) {
   const { theme } = useTheme(); 
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content || '');
-  // Estado para el lenguaje
   const [language, setLanguage] = useState(note.language || 'javascript');
+  const [tags, setTags] = useState(note.tags ? note.tags.map(t => t.tag.name) : []);
+  
   const [status, setStatus] = useState('idle');
   const isInitialMount = useRef(true);
 
@@ -31,12 +34,14 @@ export default function NoteEditor({ note, onNoteUpdated }) {
     setTitle(note.title);
     setContent(note.content || '');
     setLanguage(note.language || 'javascript');
+    setTags(note.tags ? note.tags.map(t => t.tag.name) : []);
     setStatus('idle');
     isInitialMount.current = true;
   }, [note.id]);
 
   const debouncedTitle = useDebounce(title, 1000);
   const debouncedContent = useDebounce(content, 1000);
+  const debouncedTags = useDebounce(tags, 1000); 
 
   const handleSave = useCallback(async (saveData) => {
     if (!note || !note.id) return;
@@ -58,14 +63,13 @@ export default function NoteEditor({ note, onNoteUpdated }) {
     }
     const safeContent = content || '';
     const noteContent = note.content || '';
-    
-    // Guardamos si cambia título, contenido O lenguaje
-    if (debouncedTitle !== note.title || safeContent !== noteContent || language !== note.language) {
-      handleSave({ title: debouncedTitle, content: safeContent, language });
-    }
-  }, [debouncedTitle, debouncedContent, language, handleSave]);
+    const tagsChanged = JSON.stringify(debouncedTags) !== JSON.stringify(note.tags ? note.tags.map(t => t.tag.name) : []);
 
-  // Extensiones dinámicas
+    if (debouncedTitle !== note.title || safeContent !== noteContent || language !== note.language || tagsChanged) {
+      handleSave({ title: debouncedTitle, content: safeContent, language, tags: debouncedTags });
+    }
+  }, [debouncedTitle, debouncedContent, language, debouncedTags, handleSave]);
+
   const getExtensions = () => {
       switch(language) {
           case 'python': return [python()];
@@ -102,27 +106,31 @@ export default function NoteEditor({ note, onNoteUpdated }) {
 
   return (
     <div className="flex h-full w-full flex-col bg-white dark:bg-gray-900">
-      {/* Header */}
       <div className="flex items-center justify-between px-6 py-2 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
             <div className={`flex items-center text-sm font-medium px-3 py-1 rounded-full ${note.type === 'code' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
                 {note.type === 'code' ? <FiCode className="mr-2" /> : <FiFileText className="mr-2" />}
                 {note.type === 'code' ? "Código" : "Markdown"}
             </div>
             
-            {/* --- SELECTOR DE LENGUAJE (Reintroducido) --- */}
             {note.type === 'code' && (
                 <select 
                     value={language} 
                     onChange={(e) => setLanguage(e.target.value)}
-                    className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-transparent text-gray-700 dark:text-gray-300 focus:outline-none cursor-pointer hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+                    className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-transparent text-gray-700 dark:text-gray-300 focus:outline-none cursor-pointer"
                 >
                     <option value="javascript">JavaScript</option>
                     <option value="python">Python</option>
                     <option value="html">HTML/XML</option>
                 </select>
             )}
+            
+            <div className="h-6 w-[1px] bg-gray-200 dark:bg-gray-700 mx-2"></div>
+            
+            {/* --- CAMBIO: Pasamos availableTags al TagInput --- */}
+            <TagInput tags={tags} onChange={setTags} suggestions={availableTags} />
         </div>
+
         <div className="flex items-center gap-4">
             {status === 'saving' ? <span className="text-sm italic text-gray-500">Guardando...</span> : <span className="h-5"></span>}
         </div>

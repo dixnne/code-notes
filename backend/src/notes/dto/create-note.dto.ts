@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsInt, IsString, Length, IsOptional, IsIn } from 'class-validator';
+// backend/src/notes/dto/create-note.dto.ts
+import { IsNotEmpty, IsInt, IsString, Length, IsOptional, IsIn, IsArray } from 'class-validator';
 
 export class CreateNoteDto {
   @IsNotEmpty()
@@ -12,7 +13,7 @@ export class CreateNoteDto {
 
   @IsOptional()
   @IsInt()
-  folderId?: number; // Nuevo campo opcional
+  folderId?: number;
 
   @IsOptional()
   @IsString()
@@ -22,4 +23,10 @@ export class CreateNoteDto {
   @IsOptional()
   @IsString()
   language?: string;
+
+  // --- NUEVO CAMPO: Tags ---
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true }) // Cada elemento del array debe ser string
+  tags?: string[];
 }

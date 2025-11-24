@@ -1,4 +1,5 @@
-import { IsOptional, IsString, Length } from 'class-validator';
+// backend/src/notes/dto/update-note.dto.ts
+import { IsOptional, IsString, Length, IsArray } from 'class-validator';
 
 export class UpdateNoteDto {
   @IsOptional()
@@ -12,5 +13,11 @@ export class UpdateNoteDto {
 
   @IsOptional()
   @IsString()
-  language?: string; // Permitir actualizar el lenguaje
+  language?: string;
+
+  // --- NUEVO CAMPO: Tags ---
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
 }

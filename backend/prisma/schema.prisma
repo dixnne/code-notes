@@ -10,54 +10,36 @@ generator client {
 }
 
 model User {
-  id            Int            @id @default(autoincrement())
-  email         String         @unique
-  username      String
-  password      String
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  
-  // Relaciones
-  notebooks     Notebook[]     // Notebooks que posee (Owner)
-  collaborations Collaborator[] // Notebooks donde colabora
+  id             Int            @id @default(autoincrement())
+  email          String         @unique
+  username       String
+  password       String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  notebooks      Notebook[]
+  collaborations Collaborator[]
 }
 
 model Notebook {
-  id          Int      @id @default(autoincrement())
-  title       String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  // Propietario
-  owner       User     @relation(fields: [ownerId], references: [id])
-  ownerId     Int
-  
-  // Contenido
-  folders     Folder[]
-  notes       Note[]
-  
-  // Colaboradores (Nueva Relación)
+  id            Int            @id @default(autoincrement())
+  title         String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  owner         User           @relation(fields: [ownerId], references: [id])
+  ownerId       Int
+  folders       Folder[]
+  notes         Note[]
   collaborators Collaborator[]
 }
 
-// --- NUEVO MODELO: Colaboradores ---
 model Collaborator {
   id         Int      @id @default(autoincrement())
-  
-  // Quién colabora
   user       User     @relation(fields: [userId], references: [id])
   userId     Int
-  
-  // En qué notebook
   notebook   Notebook @relation(fields: [notebookId], references: [id], onDelete: Cascade)
   notebookId Int
-  
-  // Permisos (Por ahora default a EDITOR para simplificar)
-  permission String   @default("EDITOR") // "VIEWER", "EDITOR"
-  
+  permission String   @default("EDITOR")
   createdAt  DateTime @default(now())
-
-  // Asegura que un usuario no sea colaborador duplicado en el mismo notebook
   @@unique([userId, notebookId])
 }
 
@@ -66,14 +48,11 @@ model Folder {
   name        String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
   notebook    Notebook @relation(fields: [notebookId], references: [id], onDelete: Cascade)
   notebookId  Int
-  
   parentId    Int?
   parent      Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
   children    Folder[] @relation("FolderHierarchy")
-  
   notes       Note[]
 }
 
@@ -92,4 +71,25 @@ model Note {
   
   folder     Folder?  @relation(fields: [folderId], references: [id], onDelete: Cascade)
   folderId   Int?
+
+  // --- RELACIÓN CON TAGS ---
+  tags       NoteTag[]
+}
+
+// --- NUEVOS MODELOS PARA TAGS ---
+
+model Tag {
+  id    Int       @id @default(autoincrement())
+  name  String    @unique
+  notes NoteTag[]
+}
+
+model NoteTag {
+  note   Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  noteId Int
+  
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tagId  Int
+
+  @@id([noteId, tagId])
 }
