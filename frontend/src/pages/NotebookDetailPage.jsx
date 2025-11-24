@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom'; // --- 1. Importar useSearchParams ---
 import { 
   getNotesForNotebook, 
   createNote, 
@@ -16,13 +16,16 @@ import { useAuth } from '../contexts/AuthContext';
 
 export default function NotebookDetailPage() {
   const { notebookId } = useParams();
+  // --- 2. Obtener parámetros de búsqueda ---
+  const [searchParams] = useSearchParams();
+  const requestedNoteId = searchParams.get('noteId');
+
   const [notes, setNotes] = useState([]);
   const [folders, setFolders] = useState([]);
   const [activeNote, setActiveNote] = useState(null);
   const [currentNotebook, setCurrentNotebook] = useState(null); 
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   
-  // --- ESTADOS PARA FILTRADO ---
   const [selectedTags, setSelectedTags] = useState([]); 
   const [isTagMenuOpen, setIsTagMenuOpen] = useState(false); 
   const tagMenuRef = useRef(null);
@@ -61,13 +64,25 @@ export default function NotebookDetailPage() {
       setNotes(fetchedNotes);
       setFolders(fetchedFolders);
       
+      // --- 3. Lógica de Selección Inteligente ---
       if (!activeNote && fetchedNotes.length > 0) {
-        setActiveNote(fetchedNotes[0]);
+        if (requestedNoteId) {
+          // Si hay un ID en la URL, intentamos encontrar esa nota
+          const requestedNote = fetchedNotes.find(n => n.id === parseInt(requestedNoteId));
+          if (requestedNote) {
+             setActiveNote(requestedNote);
+             // NOTA: La lógica para abrir la carpeta correspondiente está en NoteList
+          } else {
+             setActiveNote(fetchedNotes[0]); // Fallback si no existe
+          }
+        } else {
+          setActiveNote(fetchedNotes[0]);
+        }
       }
     } catch (error) {
       console.error("DEBUG: Error al cargar datos:", error);
     }
-  }, [notebookId, activeNote]);
+  }, [notebookId, activeNote, requestedNoteId]); // Añadimos requestedNoteId a dependencias
 
   useEffect(() => {
     loadData();
@@ -155,14 +170,10 @@ export default function NotebookDetailPage() {
 
   return (
     <DashboardLayout>
-      {/* BARRA SUPERIOR (SUB-NAVBAR) 
-          - Fondo sólido (bg-light-card) para que parezca una barra de herramientas.
-          - Borde inferior sutil.
-      */}
+      {/* Sub-Barra de Navegación */}
       <div className="flex h-14 items-center justify-between border-b border-black/5 bg-light-card px-6 dark:border-white/10 dark:bg-dark-card transition-colors duration-300">
         
         <div className="flex items-center gap-3">
-          {/* Botón Toggle Sidebar */}
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className={`p-1.5 rounded-md transition-colors ${
@@ -192,7 +203,7 @@ export default function NotebookDetailPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* --- BOTÓN Y MENÚ DE FILTRADO POR TAGS --- */}
+          {/* Botón y menú de Filtrado por Tags */}
           <div className="relative" ref={tagMenuRef}>
               <button 
                 onClick={() => setIsTagMenuOpen(!isTagMenuOpen)}
@@ -206,7 +217,6 @@ export default function NotebookDetailPage() {
                 {selectedTags.length > 0 ? `Filtrando (${selectedTags.length})` : 'Filtrar Tags'}
               </button>
               
-              {/* DROPDOWN DE TAGS */}
               {isTagMenuOpen && (
                 <div className="absolute right-0 top-full mt-2 w-64 rounded-lg border border-black/10 bg-light-card shadow-xl dark:border-white/10 dark:bg-dark-card z-50 overflow-hidden ring-1 ring-black/5">
                     <div className="p-3 border-b border-black/5 dark:border-white/5 bg-light-bg/50 dark:bg-dark-bg/50">
@@ -248,7 +258,6 @@ export default function NotebookDetailPage() {
                 </div>
               )}
           </div>
-          {/* ----------------------------------------- */}
 
           <button 
             onClick={() => setIsShareModalOpen(true)}
@@ -261,10 +270,7 @@ export default function NotebookDetailPage() {
         </div>
       </div>
 
-      {/* Contenedor Principal (Editor + Lista) */}
-      <div className="flex h-[calc(100vh-8rem)] w-full overflow-hidden relative">
-        
-        {/* Barra Lateral */}
+      <div className="flex h-[calc(100vh-7rem)] w-full overflow-hidden relative">
         <div ref={sidebarRef} className={`relative flex-shrink-0 h-full bg-light-card dark:bg-dark-card border-r border-black/10 dark:border-white/10 ${!isSidebarOpen ? 'hidden' : ''}`} style={{ width: '300px' }}>
             <NoteList
                 notes={filteredNotes} 
@@ -279,7 +285,6 @@ export default function NotebookDetailPage() {
             <div className={`absolute top-0 right-0 w-1 h-full cursor-col-resize z-20 hover:bg-primary/50 transition-colors ${isResizing ? 'bg-primary w-1' : 'bg-transparent'}`} onMouseDown={startResizing} />
         </div>
 
-        {/* Editor */}
         <div className="flex-1 h-full overflow-hidden bg-light-bg dark:bg-dark-bg min-w-0">
           {activeNote && activeNote.id ? (
             <NoteEditor

@@ -47,10 +47,8 @@ export default function TagsPage() {
       <div className="flex h-[calc(100vh-6rem)] flex-col md:flex-row overflow-hidden">
         
         {/* --- BARRA LATERAL (Filtros) --- */}
-        {/* CORRECCIÓN: Usar bg-light-card para que sea blanco/sólido y contraste con el fondo */}
         <div className="w-full md:w-80 flex-shrink-0 bg-light-card dark:bg-dark-card border-b md:border-r border-black/10 dark:border-white/10 flex flex-col h-full z-10 transition-colors duration-300">
             
-            {/* Encabezado del Sidebar */}
             <div className="p-5 border-b border-black/10 dark:border-white/10 bg-light-card dark:bg-dark-card">
                 <h2 className="font-display text-xl font-bold text-light-text dark:text-dark-text mb-1 flex items-center gap-2">
                     <FiFilter className="text-primary" /> 
@@ -61,7 +59,6 @@ export default function TagsPage() {
                 </p>
             </div>
             
-            {/* Lista de Tags */}
             <div className="flex-1 overflow-y-auto p-3 space-y-1 bg-light-card dark:bg-dark-card">
                 <button
                     onClick={() => setSearchParams({})}
@@ -118,10 +115,8 @@ export default function TagsPage() {
         </div>
 
         {/* --- ÁREA PRINCIPAL (Resultados) --- */}
-        {/* CORRECCIÓN: Usar bg-light-bg para el fondo principal (crema) */}
         <div className="flex-1 flex flex-col h-full overflow-hidden bg-light-bg dark:bg-dark-bg relative transition-colors duration-300">
             
-            {/* Header de Resultados */}
             <header className="px-8 py-6 bg-light-card dark:bg-dark-card border-b border-black/5 dark:border-white/5 shadow-sm shrink-0 z-10">
                 <div className="max-w-5xl mx-auto">
                     <div className="flex items-center gap-3 mb-1">
@@ -146,7 +141,6 @@ export default function TagsPage() {
                 </div>
             </header>
 
-            {/* Grid de Notas (Scrollable) */}
             <div className="flex-1 overflow-y-auto p-6 md:p-8">
                 <div className="max-w-5xl mx-auto">
                     {loadingNotes ? (
@@ -175,12 +169,11 @@ export default function TagsPage() {
                             
                             {notes.map(note => (
                                 <Link 
-                                    to={`/notebooks/${note.notebookId}`}
+                                    // --- CAMBIO: Añadimos el query param ?noteId ---
+                                    to={`/notebooks/${note.notebookId}?noteId=${note.id}`}
                                     key={note.id}
-                                    // CORRECCIÓN: Cards con bg-light-card para que sean blancas y contrasten con el fondo crema
                                     className="flex flex-col h-56 bg-light-card dark:bg-dark-card p-5 rounded-xl shadow-sm border border-black/5 dark:border-white/5 hover:shadow-lg hover:border-primary dark:hover:border-primary transition-all duration-200 group"
                                 >
-                                    {/* Header de la Tarjeta */}
                                     <div className="flex items-start justify-between mb-4">
                                         <div className="flex items-center gap-2">
                                             <div className={`p-1.5 rounded-md shadow-sm ${
@@ -188,7 +181,7 @@ export default function TagsPage() {
                                                 ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' 
                                                 : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
                                             }`}>
-                                                {note.type === 'code' ? <FiCode size={16}/> : <FiFileText size={16}/>}
+                                                {note.type === 'code' ? <FiCode size={14}/> : <FiFileText size={14}/>}
                                             </div>
                                             <span className="text-[10px] font-bold uppercase tracking-wider text-light-text-secondary dark:text-dark-text-secondary opacity-80">
                                                 {note.type}
@@ -199,17 +192,14 @@ export default function TagsPage() {
                                         </span>
                                     </div>
                                     
-                                    {/* Título */}
                                     <h3 className="font-display font-bold text-lg text-light-text dark:text-dark-text mb-2 group-hover:text-primary transition-colors truncate">
                                         {note.title}
                                     </h3>
                                     
-                                    {/* Contenido (Extracto) */}
                                     <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary line-clamp-2 mb-auto leading-relaxed">
                                         {note.content || <span className="italic opacity-50">Sin contenido...</span>}
                                     </p>
                                     
-                                    {/* Footer: Tags */}
                                     <div className="mt-4 pt-3 border-t border-black/5 dark:border-white/5 flex flex-col gap-2">
                                         <div className="flex flex-wrap gap-1.5 overflow-hidden h-6">
                                             {note.tags && note.tags.slice(0, 3).map(t => (
