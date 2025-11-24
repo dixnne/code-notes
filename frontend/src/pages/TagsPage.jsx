@@ -44,7 +44,7 @@ export default function TagsPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex h-[calc(100vh-6rem)] flex-col md:flex-row overflow-hidden">
+      <div className="flex h-[calc(100vh-11rem)] flex-col md:flex-row overflow-hidden">
         
         {/* --- BARRA LATERAL (Filtros) --- */}
         <div className="w-full md:w-80 flex-shrink-0 bg-light-card dark:bg-dark-card border-b md:border-r border-black/10 dark:border-white/10 flex flex-col h-full z-10 transition-colors duration-300">

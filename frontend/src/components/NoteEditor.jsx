@@ -99,6 +99,7 @@ export default function NoteEditor({ note, onNoteUpdated, availableTags = [] }) 
         preview="live" 
         hideToolbar={false}
         className="h-full"
+        height="100%"
         visiableDragbar={false}
       />
     </div>

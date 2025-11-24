@@ -183,8 +183,8 @@ export default function NoteList({
                 key={note.id}
                 onClick={() => onSelectNote(note)}
                 className={`
-                  group relative cursor-pointer px-4 py-2 rounded-md border transition-all duration-200
-                  ${activeNoteId === note.id ? 'bg-primary/10 border-primary shadow-sm dark:bg-primary/20' : 'border-transparent hover:bg-gray-100 dark:hover:bg-gray-800'}
+                  group relative cursor-pointer px-4 py-2 rounded-md border-l-2 transition-all duration-200
+                  ${activeNoteId === note.id ? 'bg-primary/10 border-primary dark:bg-accent1/10 dark:border-accent1' : 'border-transparent hover:bg-gray-100 dark:hover:bg-gray-800'}
                 `}
               >
                  <div className="flex items-center gap-2">

@@ -270,7 +270,7 @@ export default function NotebookDetailPage() {
         </div>
       </div>
 
-      <div className="flex h-[calc(100vh-7rem)] w-full overflow-hidden relative">
+      <div className="flex h-[calc(100vh-14rem)] w-full overflow-hidden relative">
         <div ref={sidebarRef} className={`relative flex-shrink-0 h-full bg-light-card dark:bg-dark-card border-r border-black/10 dark:border-white/10 ${!isSidebarOpen ? 'hidden' : ''}`} style={{ width: '300px' }}>
             <NoteList
                 notes={filteredNotes} 
