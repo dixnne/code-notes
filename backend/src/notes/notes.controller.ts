@@ -1,76 +1,47 @@
 // backend/src/notes/notes.controller.ts
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  UseGuards,
-  Req,
-  ParseIntPipe,
+  Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, ParseIntPipe, Query
 } from '@nestjs/common';
 import { NotesService } from './notes.service';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
-@UseGuards(JwtAuthGuard) // Protege todas las rutas con JWT
+@UseGuards(JwtAuthGuard)
 @Controller()
 export class NotesController {
   constructor(private readonly notesService: NotesService) {}
 
-  /**
-   * Obtener todas las notas de un notebook
-   * GET /api/notebooks/:id/notes
-   */
-  @Get('notebooks/:id/notes')
-  findAllByNotebook(
-    @Param('id', ParseIntPipe) notebookId: number,
-    @Req() req,
-  ) {
-    // En el payload del JWT (req.user), el ID suele venir como 'id' o 'sub'
-    // dependiendo de cómo lo guardamos en jwt.strategy.ts.
-    // Asumimos req.user.id basado en implementaciones previas.
-    const userId = req.user.id;
-    return this.notesService.findAllByNotebook(notebookId, userId);
+  // --- NUEVO: Obtener todos los tags ---
+  @Get('tags')
+  getAllTags(@Req() req) {
+    return this.notesService.getAllTags(req.user.id);
   }
 
-  /**
-   * Crear una nueva nota
-   * POST /api/notes
-   */
+  // --- NUEVO: Obtener todas las notas (con filtro opcional) ---
+  @Get('notes')
+  findAll(@Req() req, @Query('tag') tag?: string) {
+    return this.notesService.findAll(req.user.id, tag);
+  }
+
+  // ... (endpoints existentes) ...
+  @Get('notebooks/:id/notes')
+  findAllByNotebook(@Param('id', ParseIntPipe) notebookId: number, @Req() req) {
+    return this.notesService.findAllByNotebook(notebookId, req.user.id);
+  }
+
   @Post('notes')
   create(@Body() createNoteDto: CreateNoteDto, @Req() req) {
-    const userId = req.user.id;
-    // createNoteDto ahora incluye opcionalmente el campo 'type'
-    return this.notesService.create(createNoteDto, userId);
+    return this.notesService.create(createNoteDto, req.user.id);
   }
 
-  /**
-   * Actualizar una nota
-   * PATCH /api/notes/:id
-   */
   @Patch('notes/:id')
-  update(
-    @Param('id', ParseIntPipe) noteId: number,
-    @Body() updateNoteDto: UpdateNoteDto,
-    @Req() req,
-  ) {
-    const userId = req.user.id;
-    // IMPORTANTE: El orden de los argumentos debe coincidir con NotesService.update
-    // update(noteId: number, userId: number, dto: UpdateNoteDto)
-    return this.notesService.update(noteId, userId, updateNoteDto);
+  update(@Param('id', ParseIntPipe) noteId: number, @Body() updateNoteDto: UpdateNoteDto, @Req() req) {
+    return this.notesService.update(noteId, req.user.id, updateNoteDto);
   }
 
-  /**
-   * Eliminar una nota
-   * DELETE /api/notes/:id
-   */
   @Delete('notes/:id')
   remove(@Param('id', ParseIntPipe) noteId: number, @Req() req) {
-    const userId = req.user.id;
-    return this.notesService.remove(noteId, userId);
+    return this.notesService.remove(noteId, req.user.id);
   }
 }
