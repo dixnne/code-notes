@@ -17,6 +17,9 @@ RUN npm run build
 # --- Stage 2: Production ---
 FROM nginx:stable-alpine
 
+# Copia la configuración de Nginx específica del frontend
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
 # Copia los archivos estáticos generados por React al directorio de Nginx
 COPY --from=builder /app/dist /usr/share/nginx/html
 
