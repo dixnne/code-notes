@@ -196,7 +196,7 @@ export default function NoteEditor({ note, onNoteUpdated, availableTags = [] }) 
                   <div className="absolute top-full left-0 mt-2 w-40 bg-light-card dark:bg-dark-card rounded-lg shadow-xl border border-black/10 dark:border-white/10 z-50 overflow-hidden py-1">
                     <button onClick={() => { handleRewrite('Formal'); setIsRewriteMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-light-text dark:text-dark-text hover:bg-light-bg dark:hover:bg-dark-bg">Formal</button>
                     <button onClick={() => { handleRewrite('Casual'); setIsRewriteMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-light-text dark:text-dark-text hover:bg-light-bg dark:hover:bg-dark-bg">Casual</button>
-                    <button onClick={() => { handleRewrite('Poético'); setIsRewriteMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-light-text dark:text-dark-text hover:bg-light-bg dark:hover:bg-dark-bg">Poético</button>
+                    <button onClick={() => { handleRewrite('Poetic'); setIsRewriteMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-light-text dark:text-dark-text hover:bg-light-bg dark:hover:bg-dark-bg">Poético</button>
                   </div>
                 )}
               </div>
