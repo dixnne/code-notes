@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { updateNote, summarizeText, rewriteText, autoTag } from '../services/api';
+import { updateNote, summarizeText, rewriteText, autoTag, autoTitle } from '../services/api';
 import { useTheme } from '../contexts/ThemeContext';
 import ReactMDEditor from '@uiw/react-md-editor';
 import CodeMirror from '@uiw/react-codemirror';
@@ -118,6 +118,17 @@ export default function NoteEditor({ note, onNoteUpdated, availableTags = [] }) 
     setIsLoadingAi(false);
   };
 
+  const handleAutoTitle = async () => {
+    setIsLoadingAi(true);
+    try {
+      const response = await autoTitle(content);
+      setTitle(response.data);
+    } catch (error) {
+      console.error('Error auto-titling:', error);
+    }
+    setIsLoadingAi(false);
+  };
+
   const getExtensions = () => {
       switch(language) {
           case 'python': return [python()];
@@ -202,6 +213,9 @@ export default function NoteEditor({ note, onNoteUpdated, availableTags = [] }) 
               </div>
               <button onClick={handleAutoTag} disabled={isLoadingAi} className="flex items-center gap-1 text-sm text-light-text-secondary dark:text-dark-text-secondary hover:text-primary dark:hover:text-primary transition-colors">
                 <FiZap /> Auto-etiquetar
+              </button>
+              <button onClick={handleAutoTitle} disabled={isLoadingAi} className="flex items-center gap-1 text-sm text-light-text-secondary dark:text-dark-text-secondary hover:text-primary dark:hover:text-primary transition-colors">
+                <FiZap /> Auto-titular
               </button>
             </div>
         </div>

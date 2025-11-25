@@ -64,6 +64,11 @@ export class AiService {
     return result.split(',').map(tag => tag.trim());
   }
 
+  async autoTitle(userId: string, text: string): Promise<string> {
+    const prompt = `Analiza el siguiente texto y genera un título corto, descriptivo y atractivo en español. El título debe tener como máximo 10 palabras y reflejar el tema principal del texto.\n\nTexto:\n"""\n${text}\n"""`;
+    return this.generateText(userId, prompt);
+  }
+
   async generateText(userId: string, prompt: string): Promise<string> {
     const apiKey = await this.prisma.apiKey.findUnique({
       where: { userId_kind: { userId, kind: 'gemini' } },

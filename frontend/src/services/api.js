@@ -38,5 +38,6 @@ export const generateText = (prompt) => apiClient.post('/ai/generate-text', { pr
 export const summarizeText = (text) => apiClient.post('/ai/summarize', { text });
 export const rewriteText = (text, style) => apiClient.post('/ai/rewrite', { text, style });
 export const autoTag = (text) => apiClient.post('/ai/auto-tag', { text });
+export const autoTitle = (text) => apiClient.post('/ai/auto-title', { text });
 
 export default apiClient;

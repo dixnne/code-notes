@@ -34,4 +34,9 @@ export class AiController {
   autoTag(@Req() req, @Body() textDto: TextDto) {
     return this.aiService.autoTag(req.user.id, textDto.text);
   }
+
+  @Post('auto-title')
+  autoTitle(@Req() req, @Body() textDto: TextDto) {
+    return this.aiService.autoTitle(req.user.id, textDto.text);
+  }
 }
