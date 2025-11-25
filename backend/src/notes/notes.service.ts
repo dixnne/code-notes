@@ -126,12 +126,15 @@ export class NotesService {
     if (!note) throw new NotFoundException('Nota no encontrada');
     const notebook = await this.checkAccess(note.notebookId, userId);
     if (!notebook) throw new ForbiddenException('No tienes permiso para modificar esta nota.');
-    if (dto.tags) {
-        await this.prisma.noteTag.deleteMany({ where: { noteId } });
-        await this.processTags(noteId, dto.tags);
-    }
+
     const { tags, ...updateData } = dto;
-    return this.prisma.note.update({ where: { id: noteId }, data: updateData, include: { tags: { include: { tag: true } } } });
+    const updatedNote = await this.prisma.note.update({ where: { id: noteId }, data: updateData });
+
+    if (tags) {
+        await this.processTags(noteId, tags);
+    }
+
+    return this.prisma.note.findUnique({ where: { id: noteId }, include: { tags: { include: { tag: true } } } });
   }
 
   async remove(noteId: string, userId: string) {
@@ -143,6 +146,7 @@ export class NotesService {
   }
 
   private async processTags(noteId: string, tagNames: string[]) {
+    await this.prisma.noteTag.deleteMany({ where: { noteId } });
     const uniqueTags = [...new Set(tagNames.filter(t => t.trim() !== ''))];
     for (const name of uniqueTags) {
         const tag = await this.prisma.tag.upsert({ where: { name }, update: {}, create: { name } });
