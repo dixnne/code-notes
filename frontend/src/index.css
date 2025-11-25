@@ -81,5 +81,19 @@
   .dark .w-md-editor-splitter {
     @apply border-dark-text-secondary/30;
   }
+
+  /* Mobile safe area and touch optimizations */
+  body {
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+    overscroll-behavior: none;
+  }
+  
+  input, textarea, [contenteditable] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
 }
 

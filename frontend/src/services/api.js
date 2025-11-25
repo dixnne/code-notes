@@ -1,8 +1,16 @@
 // frontend/src/services/api.js
 import axios from 'axios';
+import { Capacitor } from '@capacitor/core';
+
+const getApiBaseUrl = () => {
+  if (Capacitor.isNativePlatform()) {
+    return 'http://10.0.2.2:8080/api';
+  }
+  return import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+};
 
 export const apiClient = axios.create({
-  baseURL: 'http://localhost:8080/api',
+  baseURL: getApiBaseUrl(),
 });
 apiClient.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');

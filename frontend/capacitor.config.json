@@ -1,0 +1,15 @@
+{
+  "appId": "com.codenotes.app",
+  "appName": "Code Notes",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "http"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#FCECdd",
+      "showSpinner": false
+    }
+  }
+}
