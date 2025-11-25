@@ -10,7 +10,7 @@ generator client {
 }
 
 model User {
-  id             Int            @id @default(autoincrement())
+  id             String         @id @default(uuid())
   email          String         @unique
   username       String
   password       String
@@ -18,46 +18,72 @@ model User {
   updatedAt      DateTime       @updatedAt
   notebooks      Notebook[]
   collaborations Collaborator[]
+  apiKeys        ApiKey[]
+  aiUsage        AiUsage?
+}
+
+model ApiKey {
+  id        String   @id @default(uuid())
+  // The kind of AI provider (e.g., 'gemini')
+  kind      String
+  // The user's API key, encrypted
+  key       String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, kind])
+}
+
+model AiUsage {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requests  Int      @default(0)
+  tokens    Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Notebook {
-  id            Int            @id @default(autoincrement())
+  id            String         @id @default(uuid())
   title         String
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
-  owner         User           @relation(fields: [ownerId], references: [id])
-  ownerId       Int
+  owner         User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId       String
   folders       Folder[]
   notes         Note[]
   collaborators Collaborator[]
 }
 
 model Collaborator {
-  id         Int      @id @default(autoincrement())
-  user       User     @relation(fields: [userId], references: [id])
-  userId     Int
+  id         String   @id @default(uuid())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
   notebook   Notebook @relation(fields: [notebookId], references: [id], onDelete: Cascade)
-  notebookId Int
+  notebookId String
   permission String   @default("EDITOR")
   createdAt  DateTime @default(now())
   @@unique([userId, notebookId])
 }
 
 model Folder {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(uuid())
   name        String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   notebook    Notebook @relation(fields: [notebookId], references: [id], onDelete: Cascade)
-  notebookId  Int
-  parentId    Int?
+  notebookId  String
+  parentId    String?
   parent      Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
   children    Folder[] @relation("FolderHierarchy")
   notes       Note[]
 }
 
 model Note {
-  id        Int     @id @default(autoincrement())
+  id        String  @id @default(uuid())
   title     String
   content   String? @default("")
   type      String  @default("markdown")
@@ -65,12 +91,12 @@ model Note {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   notebook   Notebook @relation(fields: [notebookId], references: [id], onDelete: Cascade)
-  notebookId Int
-  
+  notebookId String
+
   folder     Folder?  @relation(fields: [folderId], references: [id], onDelete: Cascade)
-  folderId   Int?
+  folderId   String?
 
   // --- RELACIÓN CON TAGS ---
   tags       NoteTag[]
@@ -79,17 +105,17 @@ model Note {
 // --- NUEVOS MODELOS PARA TAGS ---
 
 model Tag {
-  id    Int       @id @default(autoincrement())
+  id    String    @id @default(uuid())
   name  String    @unique
   notes NoteTag[]
 }
 
 model NoteTag {
   note   Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
-  noteId Int
-  
+  noteId String
+
   tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  tagId  Int
+  tagId  String
 
   @@id([noteId, tagId])
 }

@@ -9,7 +9,7 @@ export class NotesService {
   constructor(private prisma: PrismaService) {}
 
   // Helper para obtener IDs de notebooks accesibles
-  private async getAllowedNotebookIds(userId: number) {
+  private async getAllowedNotebookIds(userId: string) {
     const notebooks = await this.prisma.notebook.findMany({
       where: {
         OR: [
@@ -23,7 +23,7 @@ export class NotesService {
   }
 
   // --- NUEVO: Obtener todos los tags usados por el usuario ---
-  async getAllTags(userId: number) {
+  async getAllTags(userId: string) {
     const notebookIds = await this.getAllowedNotebookIds(userId);
 
     const tags = await this.prisma.tag.findMany({
@@ -58,7 +58,7 @@ export class NotesService {
   }
 
   // --- NUEVO: Buscar notas globalmente (filtrado por tag opcional) ---
-  async findAll(userId: number, tag?: string) {
+  async findAll(userId: string, tag?: string) {
     const notebookIds = await this.getAllowedNotebookIds(userId);
 
     return this.prisma.note.findMany({
@@ -82,7 +82,7 @@ export class NotesService {
 
   // ... (resto de métodos findAllByNotebook, create, update, remove se mantienen igual) ...
   // --- MANTENER MÉTODOS EXISTENTES ---
-  private async checkAccess(notebookId: number, userId: number) {
+  private async checkAccess(notebookId: string, userId: string) {
     const notebook = await this.prisma.notebook.findUnique({
         where: { id: notebookId },
         include: { collaborators: true }
@@ -94,7 +94,7 @@ export class NotesService {
     return notebook;
   }
 
-  async findAllByNotebook(notebookId: number, userId: number) {
+  async findAllByNotebook(notebookId: string, userId: string) {
     const notebook = await this.checkAccess(notebookId, userId);
     if (!notebook) throw new ForbiddenException('No tienes acceso a este notebook.');
     return this.prisma.note.findMany({
@@ -104,7 +104,7 @@ export class NotesService {
     });
   }
 
-  async create(dto: CreateNoteDto, userId: number) {
+  async create(dto: CreateNoteDto, userId: string) {
     const { title, notebookId, type, folderId, language, tags } = dto;
     const notebook = await this.checkAccess(notebookId, userId);
     if (!notebook) throw new ForbiddenException('No tienes permiso para añadir notas.');
@@ -121,7 +121,7 @@ export class NotesService {
     return this.prisma.note.findUnique({ where: { id: newNote.id }, include: { tags: { include: { tag: true } } } });
   }
 
-  async update(noteId: number, userId: number, dto: UpdateNoteDto) {
+  async update(noteId: string, userId: string, dto: UpdateNoteDto) {
     const note = await this.prisma.note.findUnique({ where: { id: noteId }, include: { notebook: true } });
     if (!note) throw new NotFoundException('Nota no encontrada');
     const notebook = await this.checkAccess(note.notebookId, userId);
@@ -134,7 +134,7 @@ export class NotesService {
     return this.prisma.note.update({ where: { id: noteId }, data: updateData, include: { tags: { include: { tag: true } } } });
   }
 
-  async remove(noteId: number, userId: number) {
+  async remove(noteId: string, userId: string) {
     const note = await this.prisma.note.findUnique({ where: { id: noteId }, include: { notebook: true } });
     if (!note) throw new NotFoundException('Nota no encontrada');
     const notebook = await this.checkAccess(note.notebookId, userId);
@@ -142,7 +142,7 @@ export class NotesService {
     return this.prisma.note.delete({ where: { id: noteId } });
   }
 
-  private async processTags(noteId: number, tagNames: string[]) {
+  private async processTags(noteId: string, tagNames: string[]) {
     const uniqueTags = [...new Set(tagNames.filter(t => t.trim() !== ''))];
     for (const name of uniqueTags) {
         const tag = await this.prisma.tag.upsert({ where: { name }, update: {}, create: { name } });

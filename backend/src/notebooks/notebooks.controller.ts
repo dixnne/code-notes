@@ -9,7 +9,7 @@ import {
   Delete,
   UseGuards,
   Req,
-  ParseIntPipe,
+  ParseUUIDPipe,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -37,7 +37,7 @@ export class NotebooksController {
 
   @Patch(':id')
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateNotebookDto: UpdateNotebookDto,
     @Req() req,
   ) {
@@ -45,14 +45,14 @@ export class NotebooksController {
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number, @Req() req) {
+  remove(@Param('id', ParseUUIDPipe) id: string, @Req() req) {
     return this.notebooksService.remove(id, req.user.id);
   }
 
   // --- NUEVO: Endpoint para Compartir ---
   @Post(':id/share')
   share(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() shareNotebookDto: ShareNotebookDto,
     @Req() req
   ) {

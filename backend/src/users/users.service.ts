@@ -16,8 +16,13 @@ export class UsersService {
 
   // Crear un nuevo usuario
   async create(data: Prisma.UserCreateInput): Promise<User> {
+    const { email, password, username } = data;
     return this.prisma.user.create({
-      data,
+      data: {
+        email,
+        password,
+        username,
+      },
     });
   }
 }

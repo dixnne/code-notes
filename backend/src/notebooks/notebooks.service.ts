@@ -12,7 +12,7 @@ export class NotebooksService {
     private usersService: UsersService // Inyectar servicio de usuarios
   ) {}
 
-  async createNotebook(userId: number, createNotebookDto: CreateNotebookDto) {
+  async createNotebook(userId: string, createNotebookDto: CreateNotebookDto) {
     return this.prisma.notebook.create({
       data: {
         title: createNotebookDto.title,
@@ -22,7 +22,7 @@ export class NotebooksService {
   }
 
   // --- ACTUALIZADO: Obtener propios Y compartidos ---
-  async getNotebooksForUser(userId: number) {
+  async getNotebooksForUser(userId: string) {
     return this.prisma.notebook.findMany({
       where: {
         OR: [
@@ -44,7 +44,7 @@ export class NotebooksService {
     });
   }
 
-  async update(id: number, userId: number, updateNotebookDto: UpdateNotebookDto) {
+  async update(id: string, userId: string, updateNotebookDto: UpdateNotebookDto) {
     const notebook = await this.prisma.notebook.findUnique({ where: { id } });
     if (!notebook) throw new NotFoundException('Notebook no encontrado');
 
@@ -59,7 +59,7 @@ export class NotebooksService {
     });
   }
 
-  async remove(id: number, userId: number) {
+  async remove(id: string, userId: string) {
     const notebook = await this.prisma.notebook.findUnique({ where: { id } });
     if (!notebook) throw new NotFoundException('Notebook no encontrado');
 
@@ -72,7 +72,7 @@ export class NotebooksService {
   }
 
   // --- NUEVO: Compartir Notebook ---
-  async shareNotebook(notebookId: number, ownerId: number, emailToShare: string) {
+  async shareNotebook(notebookId: string, ownerId: string, emailToShare: string) {
     // 1. Verificar que el notebook existe y soy el dueño
     const notebook = await this.prisma.notebook.findUnique({ where: { id: notebookId } });
     if (!notebook) throw new NotFoundException('Notebook no encontrado');

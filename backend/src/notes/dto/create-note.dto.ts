@@ -1,5 +1,5 @@
 // backend/src/notes/dto/create-note.dto.ts
-import { IsNotEmpty, IsInt, IsString, Length, IsOptional, IsIn, IsArray } from 'class-validator';
+import { IsNotEmpty, IsString, Length, IsOptional, IsIn, IsArray, IsUUID } from 'class-validator';
 
 export class CreateNoteDto {
   @IsNotEmpty()
@@ -8,12 +8,12 @@ export class CreateNoteDto {
   title: string;
 
   @IsNotEmpty()
-  @IsInt()
-  notebookId: number;
+  @IsUUID()
+  notebookId: string;
 
   @IsOptional()
-  @IsInt()
-  folderId?: number;
+  @IsUUID()
+  folderId?: string;
 
   @IsOptional()
   @IsString()

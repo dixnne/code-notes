@@ -1,6 +1,6 @@
 // backend/src/notes/notes.controller.ts
 import {
-  Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, ParseIntPipe, Query
+  Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, ParseUUIDPipe, Query
 } from '@nestjs/common';
 import { NotesService } from './notes.service';
 import { CreateNoteDto } from './dto/create-note.dto';
@@ -26,7 +26,7 @@ export class NotesController {
 
   // ... (endpoints existentes) ...
   @Get('notebooks/:id/notes')
-  findAllByNotebook(@Param('id', ParseIntPipe) notebookId: number, @Req() req) {
+  findAllByNotebook(@Param('id', ParseUUIDPipe) notebookId: string, @Req() req) {
     return this.notesService.findAllByNotebook(notebookId, req.user.id);
   }
 
@@ -36,12 +36,12 @@ export class NotesController {
   }
 
   @Patch('notes/:id')
-  update(@Param('id', ParseIntPipe) noteId: number, @Body() updateNoteDto: UpdateNoteDto, @Req() req) {
+  update(@Param('id', ParseUUIDPipe) noteId: string, @Body() updateNoteDto: UpdateNoteDto, @Req() req) {
     return this.notesService.update(noteId, req.user.id, updateNoteDto);
   }
 
   @Delete('notes/:id')
-  remove(@Param('id', ParseIntPipe) noteId: number, @Req() req) {
+  remove(@Param('id', ParseUUIDPipe) noteId: string, @Req() req) {
     return this.notesService.remove(noteId, req.user.id);
   }
 }
