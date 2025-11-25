@@ -8,6 +8,7 @@ import { ConfigModule } from '@nestjs/config';
 import { NotebooksModule } from './notebooks/notebooks.module';
 import { NotesModule } from './notes/notes.module';
 import { FoldersModule } from './folders/folders.module'; // Importar Folders
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -17,7 +18,8 @@ import { FoldersModule } from './folders/folders.module'; // Importar Folders
     AuthModule,
     NotebooksModule,
     NotesModule,
-    FoldersModule, // Añadir al array de imports
+    FoldersModule,
+    AiModule, // Añadir al array de imports
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -6,7 +6,7 @@ import { CreateFolderDto } from './dto/create-folder.dto';
 export class FoldersService {
   constructor(private prisma: PrismaService) {}
 
-  async create(userId: number, dto: CreateFolderDto) {
+  async create(userId: string, dto: CreateFolderDto) {
     // Verificar propiedad del notebook
     const notebook = await this.prisma.notebook.findFirst({
       where: { id: dto.notebookId, ownerId: userId },
@@ -35,7 +35,7 @@ export class FoldersService {
     });
   }
 
-  async findAllByNotebook(userId: number, notebookId: number) {
+  async findAllByNotebook(userId: string, notebookId: string) {
     const notebook = await this.prisma.notebook.findFirst({
       where: { id: notebookId, ownerId: userId },
     });
@@ -52,7 +52,7 @@ export class FoldersService {
     });
   }
 
-  async remove(userId: number, folderId: number) {
+  async remove(userId: string, folderId: string) {
     const folder = await this.prisma.folder.findUnique({
       where: { id: folderId },
       include: { notebook: true },

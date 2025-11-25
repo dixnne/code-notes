@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, Req, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, Req, ParseUUIDPipe } from '@nestjs/common';
 import { FoldersService } from './folders.service';
 import { CreateFolderDto } from './dto/create-folder.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -14,12 +14,12 @@ export class FoldersController {
   }
 
   @Get('notebooks/:id/folders')
-  findAllByNotebook(@Req() req, @Param('id', ParseIntPipe) notebookId: number) {
+  findAllByNotebook(@Req() req, @Param('id') notebookId: string) {
     return this.foldersService.findAllByNotebook(req.user.id, notebookId);
   }
 
   @Delete('folders/:id')
-  remove(@Req() req, @Param('id', ParseIntPipe) folderId: number) {
+  remove(@Req() req, @Param('id') folderId: string) {
     return this.foldersService.remove(req.user.id, folderId);
   }
 }

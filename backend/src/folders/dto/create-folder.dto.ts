@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsInt, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional, IsUUID } from 'class-validator';
 
 export class CreateFolderDto {
   @IsNotEmpty()
@@ -6,11 +6,11 @@ export class CreateFolderDto {
   name: string;
 
   @IsNotEmpty()
-  @IsInt()
-  notebookId: number;
+  @IsUUID()
+  notebookId: string;
 
   // --- NUEVO: ID de la carpeta padre (opcional) ---
   @IsOptional()
-  @IsInt()
-  parentId?: number;
+  @IsUUID()
+  parentId?: string;
 }
