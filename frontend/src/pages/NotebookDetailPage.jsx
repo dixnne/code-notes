@@ -3,7 +3,7 @@ import { FiChevronLeft, FiShare2, FiTag, FiSidebar, FiX, FiCheck, FiSearch } fro
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { getNotesForNotebook, createNote, deleteNote } from '../services/api';
+import { getNotesForNotebook, createNote, deleteNote, updateNote } from '../services/api';
 import { getFoldersForNotebook } from '../services/api';
 import { getNotebooks } from '../services/api';
 import NoteList from '../components/NoteList';
@@ -160,11 +160,18 @@ export default function NotebookDetailPage() {
     }
   };
 
-  const handleInsertText = (text) => {
+  const handleInsertText = async (text) => {
     if (activeNote) {
       const newContent = activeNote.content ? `${activeNote.content}\n\n${text}` : text;
       const updatedNote = { ...activeNote, content: newContent };
       setActiveNote(updatedNote);
+      
+      try {
+        const response = await updateNote(activeNote.id, { content: newContent });
+        handleNoteUpdate(response.data);
+      } catch (error) {
+        console.error('Error saving inserted text:', error);
+      }
     }
   };
 
