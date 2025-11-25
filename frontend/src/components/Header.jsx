@@ -6,14 +6,14 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getNotebooks } from '../services/api';
 import { FaNoteSticky } from 'react-icons/fa6';
 // --- AÑADIDO: FiHash (icono de tag) ---
-import { FiLogOut, FiSun, FiMoon, FiChevronDown, FiBook, FiChevronRight, FiHash } from 'react-icons/fi'; 
+import { FiLogOut, FiSun, FiMoon, FiChevronDown, FiBook, FiChevronRight, FiHash, FiSettings } from 'react-icons/fi';
 
 const Header = () => {
   // ... (lógica existente) ...
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
-  const { notebookId } = useParams(); 
+  const { notebookId } = useParams();
 
   const [notebooks, setNotebooks] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -43,7 +43,10 @@ const Header = () => {
     if (!user) return <div className="w-24 h-6 bg-gray-200 rounded animate-pulse" />;
     return (
       <div className="flex items-center space-x-4">
-        <Link to="/api-key" className="text-sm text-light-text-secondary dark:text-dark-text-secondary hover:text-light-text dark:hover:text-dark-text transition-colors">API Key</Link>
+        <Link to="/settings" className="flex items-center space-x-2 text-light-text-secondary dark:text-dark-text-secondary hover:text-light-text dark:hover:text-dark-text transition-colors">
+          <FiSettings />
+          <span className="text-sm hidden sm:block">Configuración</span>
+        </Link>
         <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary hidden sm:block">{user.username}</span>
         <button onClick={logout} className="flex items-center space-x-2 text-light-text-secondary dark:text-dark-text-secondary hover:text-light-text dark:hover:text-dark-text transition-colors"><FiLogOut /></button>
       </div>

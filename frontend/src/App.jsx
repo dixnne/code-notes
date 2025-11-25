@@ -1,5 +1,3 @@
-// frontend/src/App.jsx
-import ApiKeyPage from './pages/ApiKeyPage';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -7,7 +5,8 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/HomePage';
 import NotebookDetailPage from './pages/NotebookDetailPage';
-import TagsPage from './pages/TagsPage'; // 1. Importar nueva página
+import TagsPage from './pages/TagsPage';
+import SettingsPage from './pages/SettingsPage';
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -21,9 +20,8 @@ function App() {
       <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
       <Route path="/notebooks/:notebookId" element={<ProtectedRoute><NotebookDetailPage /></ProtectedRoute>} />
       
-      {/* 2. Añadir ruta de Tags */}
       <Route path="/tags" element={<ProtectedRoute><TagsPage /></ProtectedRoute>} />
-      <Route path="/api-key" element={<ProtectedRoute><ApiKeyPage /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
     </Routes>
   );
 }
