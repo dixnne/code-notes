@@ -169,26 +169,47 @@ export default function NoteEditor({ note, onNoteUpdated, availableTags = [] }) 
 
             <div className="flex items-center gap-2">
               <button onClick={handleSummarize} disabled={isLoadingAi} className="flex items-center gap-1 text-sm text-light-text-secondary dark:text-dark-text-secondary hover:text-primary dark:hover:text-primary transition-colors">
-                <FiZap /> Summarize
+                <FiZap /> Resumir
               </button>
-              <div className="relative group">
-                <button disabled={isLoadingAi} className="flex items-center gap-1 text-sm text-light-text-secondary dark:text-dark-text-secondary hover:text-primary dark:hover:text-primary transition-colors">
-                  <FiZap /> Rewrite
+              const [isRewriteMenuOpen, setIsRewriteMenuOpen] = useState(false);
+  const rewriteMenuRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (rewriteMenuRef.current && !rewriteMenu.current.contains(event.target)) {
+        setIsRewriteMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [rewriteMenuRef]);
+
+//...
+
+              <div className="relative" ref={rewriteMenuRef}>
+                <button
+                  disabled={isLoadingAi}
+                  onClick={() => setIsRewriteMenuOpen(!isRewriteMenuOpen)}
+                  className="flex items-center gap-1 text-sm text-light-text-secondary dark:text-dark-text-secondary hover:text-primary dark:hover:text-primary transition-colors"
+                >
+                  <FiZap /> Reescribir
                 </button>
-                <div className="absolute top-full left-0 mt-2 w-40 bg-light-card dark:bg-dark-card rounded-lg shadow-xl border border-black/10 dark:border-white/10 z-50 overflow-hidden py-1 hidden group-hover:block">
-                  <button onClick={() => handleRewrite('Formal')} className="w-full text-left px-4 py-2 text-sm text-light-text dark:text-dark-text hover:bg-light-bg dark:hover:bg-dark-bg">Formal</button>
-                  <button onClick={() => handleRewrite('Casual')} className="w-full text-left px-4 py-2 text-sm text-light-text dark:text-dark-text hover:bg-light-bg dark:hover:bg-dark-bg">Casual</button>
-                  <button onClick={() => handleRewrite('Poetic')} className="w-full text-left px-4 py-2 text-sm text-light-text dark:text-dark-text hover:bg-light-bg dark:hover:bg-dark-bg">Poetic</button>
-                </div>
+                {isRewriteMenuOpen && (
+                  <div className="absolute top-full left-0 mt-2 w-40 bg-light-card dark:bg-dark-card rounded-lg shadow-xl border border-black/10 dark:border-white/10 z-50 overflow-hidden py-1">
+                    <button onClick={() => { handleRewrite('Formal'); setIsRewriteMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-light-text dark:text-dark-text hover:bg-light-bg dark:hover:bg-dark-bg">Formal</button>
+                    <button onClick={() => { handleRewrite('Casual'); setIsRewriteMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-light-text dark:text-dark-text hover:bg-light-bg dark:hover:bg-dark-bg">Casual</button>
+                    <button onClick={() => { handleRewrite('Poético'); setIsRewriteMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-light-text dark:text-dark-text hover:bg-light-bg dark:hover:bg-dark-bg">Poético</button>
+                  </div>
+                )}
               </div>
               <button onClick={handleAutoTag} disabled={isLoadingAi} className="flex items-center gap-1 text-sm text-light-text-secondary dark:text-dark-text-secondary hover:text-primary dark:hover:text-primary transition-colors">
-                <FiZap /> Auto-tag
+                <FiZap /> Auto-etiquetar
               </button>
             </div>
         </div>
 
         <div className="flex items-center gap-4">
-            {isLoadingAi && <span className="text-sm italic text-gray-500">AI is thinking...</span>}
+            {isLoadingAi && <span className="text-sm italic text-gray-500">La IA está pensando...</span>}
             {status === 'saving' ? <span className="text-sm italic text-gray-500">Guardando...</span> : <span className="h-5"></span>}
         </div>
       </div>

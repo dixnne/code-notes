@@ -270,7 +270,7 @@ export default function NotebookDetailPage() {
             className="flex items-center gap-2 rounded-lg bg-purple-100 px-3 py-1.5 text-sm font-medium text-purple-600 transition-colors hover:bg-purple-200"
           >
             <FiSearch className="h-4 w-4" />
-            Research
+            Investigar
           </button>
         </div>
       </div>

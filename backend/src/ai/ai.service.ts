@@ -49,17 +49,17 @@ export class AiService {
   }
 
   async summarizeText(userId: string, text: string): Promise<string> {
-    const prompt = `Resume el siguiente texto:\n\n${text}`;
+    const prompt = `Analiza el siguiente texto y genera un resumen conciso y claro en español. El resumen debe capturar las ideas principales y los puntos clave, omitiendo detalles secundarios. El objetivo es que alguien pueda entender la esencia del texto leyéndolo.\n\nTexto a resumir:\n"""\n${text}\n"""`;
     return this.generateText(userId, prompt);
   }
 
   async rewriteText(userId: string, text: string, style: string): Promise<string> {
-    const prompt = `Reescribe el siguiente texto en un estilo ${style}:\n\n${text}`;
+    const prompt = `Toma el siguiente texto y reescríbelo completamente en un estilo que sea **${style}**. Mantén el significado central y la información clave, pero adapta el tono, el vocabulario y la estructura de las frases para que reflejen el estilo solicitado. La salida debe ser únicamente el texto reescrito en español.\n\nTexto original:\n"""\n${text}\n"""`;
     return this.generateText(userId, prompt);
   }
 
   async autoTag(userId: string, text: string): Promise<string[]> {
-    const prompt = `Basado en el siguiente texto, sugiere hasta 5 etiquetas relevantes. Devuélvelas como una lista separada por comas. Por ejemplo: "etiqueta1,etiqueta2,etiqueta3".\n\nTexto: "${text}"`;
+    const prompt = `Eres un experto en clasificación de contenido. Analiza el siguiente texto y genera entre 3 y 5 etiquetas (tags) relevantes que describan sus temas principales. Las etiquetas deben ser cortas, específicas y en español. Devuelve únicamente una lista de etiquetas separadas por comas (por ejemplo: "inteligencia artificial,programación,javascript").\n\nTexto para analizar:\n"""\n${text}\n"""`;
     const result = await this.generateText(userId, prompt);
     return result.split(',').map(tag => tag.trim());
   }
@@ -70,7 +70,7 @@ export class AiService {
     });
 
     if (!apiKey) {
-      throw new NotFoundException('No API key found for this user.');
+      throw new NotFoundException('No se encontró una API key para este usuario.');
     }
 
     const decryptedKey = await this.decrypt(apiKey.key);
