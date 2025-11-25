@@ -37,7 +37,7 @@ const ResearchPanel = ({ onInsertText }) => {
   return (
     <div className="fixed bottom-4 right-4 w-96 h-[60vh] bg-light-card dark:bg-dark-card shadow-2xl rounded-lg flex flex-col z-50">
       <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
-        <h3 className="font-bold flex items-center gap-2"><FiSearch /> Research Assistant</h3>
+        <h3 className="font-bold flex items-center gap-2"><FiSearch /> Asistente de Investigación</h3>
         <button onClick={() => setIsOpen(false)}><FiX /></button>
       </div>
       <div className="flex-1 p-4 overflow-y-auto">
@@ -47,13 +47,13 @@ const ResearchPanel = ({ onInsertText }) => {
               <p>{item.text}</p>
               {item.type === 'ai' && (
                 <button onClick={() => onInsertText(item.text)} className="mt-2 text-xs bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded">
-                  Insert into Note
+                  Insertar en Nota
                 </button>
               )}
             </div>
           </div>
         ))}
-        {isLoading && <div className="text-center">Loading...</div>}
+        {isLoading && <div className="text-center">Cargando...</div>}
       </div>
       <div className="p-4 border-t border-gray-200 dark:border-gray-700">
         <div className="flex gap-2">
@@ -62,11 +62,11 @@ const ResearchPanel = ({ onInsertText }) => {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleQuery()}
-            placeholder="Ask something..."
+            placeholder="Pregunta algo..."
             className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-light-card dark:bg-dark-card focus:outline-none focus:ring-2 focus:ring-primary"
           />
           <button onClick={handleQuery} disabled={isLoading} className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark disabled:bg-gray-400">
-            Ask
+            Preguntar
           </button>
         </div>
       </div>

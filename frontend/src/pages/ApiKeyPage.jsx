@@ -18,11 +18,11 @@ const ApiKeyPage = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">API Key Management</h1>
+      <h1 className="text-2xl font-bold mb-4">Administración de API Key</h1>
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
           <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700">
-            Gemini API Key
+            API Key de Gemini
           </label>
           <input
             type="text"
@@ -36,7 +36,7 @@ const ApiKeyPage = () => {
           type="submit"
           className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
         >
-          Save
+          Guardar
         </button>
       </form>
       {message && <p className="mt-4">{message}</p>}

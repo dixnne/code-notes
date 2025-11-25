@@ -24,13 +24,13 @@ const AiGenerator = () => {
     <div className="my-6">
       <h2 className="text-xl font-semibold mb-2 flex items-center">
         <FiCpu className="mr-2" />
-        AI Text Generator
+        Generador de Texto AI
       </h2>
       <div className="bg-light-bg dark:bg-dark-bg p-4 rounded-lg">
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Enter your prompt here..."
+          placeholder="Introduce tu prompt aquí..."
           className="w-full h-24 p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-light-card dark:bg-dark-card focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <button
@@ -38,11 +38,11 @@ const AiGenerator = () => {
           disabled={isLoading}
           className="mt-2 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark disabled:bg-gray-400"
         >
-          {isLoading ? 'Generating...' : 'Generate Text'}
+          {isLoading ? 'Generando...' : 'Generar Texto'}
         </button>
         {result && (
           <div className="mt-4 p-4 bg-light-card dark:bg-dark-card rounded-md">
-            <h3 className="font-semibold">Generated Text:</h3>
+            <h3 className="font-semibold">Texto Generado:</h3>
             <pre className="whitespace-pre-wrap font-sans">{result}</pre>
           </div>
         )}

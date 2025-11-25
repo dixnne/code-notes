@@ -49,17 +49,17 @@ export class AiService {
   }
 
   async summarizeText(userId: string, text: string): Promise<string> {
-    const prompt = `Summarize the following text:\n\n${text}`;
+    const prompt = `Resume el siguiente texto:\n\n${text}`;
     return this.generateText(userId, prompt);
   }
 
   async rewriteText(userId: string, text: string, style: string): Promise<string> {
-    const prompt = `Rewrite the following text in a ${style} style:\n\n${text}`;
+    const prompt = `Reescribe el siguiente texto en un estilo ${style}:\n\n${text}`;
     return this.generateText(userId, prompt);
   }
 
   async autoTag(userId: string, text: string): Promise<string[]> {
-    const prompt = `Based on the following text, suggest up to 5 relevant tags. Return them as a comma-separated list. For example: "tag1,tag2,tag3".\n\nText: "${text}"`;
+    const prompt = `Basado en el siguiente texto, sugiere hasta 5 etiquetas relevantes. Devuélvelas como una lista separada por comas. Por ejemplo: "etiqueta1,etiqueta2,etiqueta3".\n\nTexto: "${text}"`;
     const result = await this.generateText(userId, prompt);
     return result.split(',').map(tag => tag.trim());
   }
