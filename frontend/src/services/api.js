@@ -33,4 +33,10 @@ export const deleteFolder = (folderId) => apiClient.delete(`/folders/${folderId}
 export const getAllTags = () => apiClient.get('/tags');
 export const getAllNotes = (tag) => apiClient.get('/notes', { params: { tag } }); // Soporta filtro ?tag=...
 
+export const saveApiKey = (key) => apiClient.post('/ai/api-key', { key });
+export const generateText = (prompt) => apiClient.post('/ai/generate-text', { prompt });
+export const summarizeText = (text) => apiClient.post('/ai/summarize', { text });
+export const rewriteText = (text, style) => apiClient.post('/ai/rewrite', { text, style });
+export const autoTag = (text) => apiClient.post('/ai/auto-tag', { text });
+
 export default apiClient;

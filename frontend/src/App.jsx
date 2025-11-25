@@ -1,4 +1,5 @@
 // frontend/src/App.jsx
+import ApiKeyPage from './pages/ApiKeyPage';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -22,6 +23,7 @@ function App() {
       
       {/* 2. Añadir ruta de Tags */}
       <Route path="/tags" element={<ProtectedRoute><TagsPage /></ProtectedRoute>} />
+      <Route path="/api-key" element={<ProtectedRoute><ApiKeyPage /></ProtectedRoute>} />
     </Routes>
   );
 }
