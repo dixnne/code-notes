@@ -54,10 +54,7 @@ export const AuthProvider = ({ children }) => {
   const fetchUserProfile = async (currentToken) => {
     if (!currentToken) return;
     try {
-      // Configuramos el header para esta petición específica (por si api.js aún no lo tiene)
-      const response = await api.get('/auth/profile', {
-        headers: { Authorization: `Bearer ${currentToken}` }
-      });
+      const response = await api.get('/auth/profile');
       setUser(response.data);
     } catch (error) {
       console.error('Error al obtener el perfil:', error);
