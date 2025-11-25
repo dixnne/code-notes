@@ -146,11 +146,42 @@ export class NotesService {
   }
 
   private async processTags(noteId: string, tagNames: string[]) {
-    await this.prisma.noteTag.deleteMany({ where: { noteId } });
-    const uniqueTags = [...new Set(tagNames.filter(t => t.trim() !== ''))];
-    for (const name of uniqueTags) {
-        const tag = await this.prisma.tag.upsert({ where: { name }, update: {}, create: { name } });
-        await this.prisma.noteTag.create({ data: { noteId, tagId: tag.id } });
+    const uniqueTagNames = [...new Set(tagNames.filter(t => t.trim() !== ''))];
+
+    // Obtener las etiquetas existentes para la nota
+    const existingNoteTags = await this.prisma.noteTag.findMany({
+      where: { noteId },
+      include: { tag: true },
+    });
+    const existingTagNames = existingNoteTags.map(nt => nt.tag.name);
+
+    // Identificar etiquetas a añadir
+    const tagsToAddNames = uniqueTagNames.filter(name => !existingTagNames.includes(name));
+    // Identificar etiquetas a eliminar
+    const tagsToRemoveNames = existingTagNames.filter(name => !uniqueTagNames.includes(name));
+
+    // Eliminar asociaciones de etiquetas que ya no están presentes
+    if (tagsToRemoveNames.length > 0) {
+      await this.prisma.noteTag.deleteMany({
+        where: {
+          noteId,
+          tag: {
+            name: { in: tagsToRemoveNames },
+          },
+        },
+      });
+    }
+
+    // Añadir nuevas asociaciones de etiquetas
+    for (const name of tagsToAddNames) {
+      const tag = await this.prisma.tag.upsert({
+        where: { name },
+        update: {},
+        create: { name },
+      });
+      await this.prisma.noteTag.create({
+        data: { noteId, tagId: tag.id },
+      });
     }
   }
 }
