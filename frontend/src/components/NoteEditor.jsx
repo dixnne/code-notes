@@ -9,6 +9,7 @@ import { html } from '@codemirror/lang-html';
 import { githubLight, githubDark } from '@uiw/codemirror-theme-github';
 import { FiCode, FiFileText, FiZap } from 'react-icons/fi';
 import TagInput from './TagInput';
+import AiLoadingIndicator from './AiLoadingIndicator';
 
 function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -192,36 +193,64 @@ export default function NoteEditor({ note, onNoteUpdated, availableTags = [] }) 
             <div className="h-6 w-[1px] bg-gray-200 dark:bg-gray-700 mx-2"></div>
 
             <div className="flex items-center gap-2">
-              <button onClick={handleSummarize} disabled={isLoadingAi} className="flex items-center gap-1 text-sm text-light-text-secondary dark:text-dark-text-secondary hover:text-primary dark:hover:text-primary transition-colors">
-                <FiZap /> Resumir
+              <button 
+                onClick={handleSummarize} 
+                disabled={isLoadingAi} 
+                className={`flex items-center gap-1 text-sm px-2 py-1 rounded-lg transition-all duration-300 ${
+                  isLoadingAi 
+                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white animate-ai-shimmer bg-[length:200%_100%]' 
+                    : 'text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                }`}
+              >
+                <FiZap className={isLoadingAi ? 'animate-spin' : ''} /> Resumir
               </button>
               <div className="relative" ref={rewriteMenuRef}>
                 <button
                   disabled={isLoadingAi}
                   onClick={() => setIsRewriteMenuOpen(!isRewriteMenuOpen)}
-                  className="flex items-center gap-1 text-sm text-light-text-secondary dark:text-dark-text-secondary hover:text-primary dark:hover:text-primary transition-colors"
+                  className={`flex items-center gap-1 text-sm px-2 py-1 rounded-lg transition-all duration-300 ${
+                    isLoadingAi 
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white animate-ai-shimmer bg-[length:200%_100%]' 
+                      : 'text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                  }`}
                 >
-                  <FiZap /> Reescribir
+                  <FiZap className={isLoadingAi ? 'animate-spin' : ''} /> Reescribir
                 </button>
                 {isRewriteMenuOpen && (
-                  <div className="absolute top-full left-0 mt-2 w-40 bg-light-card dark:bg-dark-card rounded-lg shadow-xl border border-black/10 dark:border-white/10 z-50 overflow-hidden py-1">
-                    <button onClick={() => { handleRewrite('Formal'); setIsRewriteMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-light-text dark:text-dark-text hover:bg-light-bg dark:hover:bg-dark-bg">Formal</button>
-                    <button onClick={() => { handleRewrite('Casual'); setIsRewriteMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-light-text dark:text-dark-text hover:bg-light-bg dark:hover:bg-dark-bg">Casual</button>
-                    <button onClick={() => { handleRewrite('Poetic'); setIsRewriteMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-light-text dark:text-dark-text hover:bg-light-bg dark:hover:bg-dark-bg">Poético</button>
+                  <div className="absolute top-full left-0 mt-2 w-40 bg-light-card dark:bg-dark-card rounded-lg shadow-xl border border-purple-200/30 dark:border-purple-500/30 z-50 overflow-hidden py-1">
+                    <button onClick={() => { handleRewrite('Formal'); setIsRewriteMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-light-text dark:text-dark-text hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 dark:hover:from-purple-900/20 dark:hover:to-pink-900/20 transition-all">Formal</button>
+                    <button onClick={() => { handleRewrite('Casual'); setIsRewriteMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-light-text dark:text-dark-text hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 dark:hover:from-purple-900/20 dark:hover:to-pink-900/20 transition-all">Casual</button>
+                    <button onClick={() => { handleRewrite('Poetic'); setIsRewriteMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-light-text dark:text-dark-text hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 dark:hover:from-purple-900/20 dark:hover:to-pink-900/20 transition-all">Poético</button>
                   </div>
                 )}
               </div>
-              <button onClick={handleAutoTag} disabled={isLoadingAi} className="flex items-center gap-1 text-sm text-light-text-secondary dark:text-dark-text-secondary hover:text-primary dark:hover:text-primary transition-colors">
-                <FiZap /> Auto-etiquetar
+              <button 
+                onClick={handleAutoTag} 
+                disabled={isLoadingAi} 
+                className={`flex items-center gap-1 text-sm px-2 py-1 rounded-lg transition-all duration-300 ${
+                  isLoadingAi 
+                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white animate-ai-shimmer bg-[length:200%_100%]' 
+                    : 'text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                }`}
+              >
+                <FiZap className={isLoadingAi ? 'animate-spin' : ''} /> Auto-etiquetar
               </button>
-              <button onClick={handleAutoTitle} disabled={isLoadingAi} className="flex items-center gap-1 text-sm text-light-text-secondary dark:text-dark-text-secondary hover:text-primary dark:hover:text-primary transition-colors">
-                <FiZap /> Auto-titular
+              <button 
+                onClick={handleAutoTitle} 
+                disabled={isLoadingAi} 
+                className={`flex items-center gap-1 text-sm px-2 py-1 rounded-lg transition-all duration-300 ${
+                  isLoadingAi 
+                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white animate-ai-shimmer bg-[length:200%_100%]' 
+                    : 'text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                }`}
+              >
+                <FiZap className={isLoadingAi ? 'animate-spin' : ''} /> Auto-titular
               </button>
             </div>
         </div>
 
         <div className="flex items-center gap-4">
-            {isLoadingAi && <span className="text-sm italic text-gray-500">La IA está pensando...</span>}
+            {isLoadingAi && <AiLoadingIndicator />}
             {status === 'saving' ? <span className="text-sm italic text-gray-500">Guardando...</span> : <span className="h-5"></span>}
         </div>
       </div>

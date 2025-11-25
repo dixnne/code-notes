@@ -34,6 +34,30 @@ export default {
         'dark-text': '#FCECdd',      // Texto principal (Crema)
         'dark-text-secondary': '#A0A0A0', // Texto secundario (Gris claro)
       },
+      animation: {
+        'ai-shimmer': 'ai-shimmer 3s ease-in-out infinite',
+        'ai-pulse': 'ai-pulse 1.5s ease-in-out infinite',
+        'ai-fade-in': 'ai-fade-in 0.6s ease-out',
+        'ai-glow': 'ai-glow 2s ease-in-out infinite',
+      },
+      keyframes: {
+        'ai-shimmer': {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+        },
+        'ai-pulse': {
+          '0%, 100%': { opacity: '0.4', transform: 'scale(0.8)' },
+          '50%': { opacity: '1', transform: 'scale(1.2)' },
+        },
+        'ai-fade-in': {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'ai-glow': {
+          '0%, 100%': { boxShadow: '0 0 20px rgba(168, 85, 247, 0.4), 0 0 40px rgba(236, 72, 153, 0.2)' },
+          '50%': { boxShadow: '0 0 30px rgba(168, 85, 247, 0.6), 0 0 60px rgba(236, 72, 153, 0.4)' },
+        },
+      },
     },
   },
   plugins: [

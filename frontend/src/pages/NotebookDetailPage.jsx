@@ -274,7 +274,11 @@ export default function NotebookDetailPage() {
           </button>
            <button
             onClick={() => setIsResearchPanelOpen(!isResearchPanelOpen)}
-            className="flex items-center gap-2 rounded-lg bg-purple-100 px-3 py-1.5 text-sm font-medium text-purple-600 transition-colors hover:bg-purple-200"
+            className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-300 ${
+              isResearchPanelOpen
+                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg scale-105'
+                : 'bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-purple-600 dark:text-purple-400 hover:shadow-lg hover:scale-105'
+            }`}
           >
             <FiSearch className="h-4 w-4" />
             Investigar
