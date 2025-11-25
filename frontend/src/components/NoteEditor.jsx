@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { updateNote } from '../services/api';
+import { updateNote, summarizeText, rewriteText, autoTag } from '../services/api';
 import { useTheme } from '../contexts/ThemeContext';
 import ReactMDEditor from '@uiw/react-md-editor';
 import CodeMirror from '@uiw/react-codemirror';
@@ -7,8 +7,8 @@ import { javascript } from '@codemirror/lang-javascript';
 import { python } from '@codemirror/lang-python';
 import { html } from '@codemirror/lang-html';
 import { githubLight, githubDark } from '@uiw/codemirror-theme-github';
-import { FiCode, FiFileText } from 'react-icons/fi';
-import TagInput from './TagInput'; 
+import { FiCode, FiFileText, FiZap } from 'react-icons/fi';
+import TagInput from './TagInput';
 
 function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -28,6 +28,7 @@ export default function NoteEditor({ note, onNoteUpdated, availableTags = [] }) 
   const [tags, setTags] = useState(note.tags ? note.tags.map(t => t.tag.name) : []);
   
   const [status, setStatus] = useState('idle');
+  const [isLoadingAi, setIsLoadingAi] = useState(false);
   const isInitialMount = useRef(true);
 
   useEffect(() => {
@@ -69,6 +70,40 @@ export default function NoteEditor({ note, onNoteUpdated, availableTags = [] }) 
       handleSave({ title: debouncedTitle, content: safeContent, language, tags: debouncedTags });
     }
   }, [debouncedTitle, debouncedContent, language, debouncedTags, handleSave]);
+
+  const handleSummarize = async () => {
+    setIsLoadingAi(true);
+    try {
+      const response = await summarizeText(content);
+      setContent(response.data);
+    } catch (error) {
+      console.error('Error summarizing text:', error);
+    }
+    setIsLoadingAi(false);
+  };
+
+  const handleRewrite = async (style) => {
+    setIsLoadingAi(true);
+    try {
+      const response = await rewriteText(content, style);
+      setContent(response.data);
+    } catch (error) {
+      console.error('Error rewriting text:', error);
+    }
+    setIsLoadingAi(false);
+  };
+
+  const handleAutoTag = async () => {
+    setIsLoadingAi(true);
+    try {
+      const response = await autoTag(content);
+      const newTags = response.data;
+      setTags([...new Set([...tags, ...newTags])]);
+    } catch (error) {
+      console.error('Error auto-tagging:', error);
+    }
+    setIsLoadingAi(false);
+  };
 
   const getExtensions = () => {
       switch(language) {
@@ -128,11 +163,32 @@ export default function NoteEditor({ note, onNoteUpdated, availableTags = [] }) 
             
             <div className="h-6 w-[1px] bg-gray-200 dark:bg-gray-700 mx-2"></div>
             
-            {/* --- CAMBIO: Pasamos availableTags al TagInput --- */}
             <TagInput tags={tags} onChange={setTags} suggestions={availableTags} />
+
+            <div className="h-6 w-[1px] bg-gray-200 dark:bg-gray-700 mx-2"></div>
+
+            <div className="flex items-center gap-2">
+              <button onClick={handleSummarize} disabled={isLoadingAi} className="flex items-center gap-1 text-sm text-light-text-secondary dark:text-dark-text-secondary hover:text-primary dark:hover:text-primary transition-colors">
+                <FiZap /> Summarize
+              </button>
+              <div className="relative group">
+                <button disabled={isLoadingAi} className="flex items-center gap-1 text-sm text-light-text-secondary dark:text-dark-text-secondary hover:text-primary dark:hover:text-primary transition-colors">
+                  <FiZap /> Rewrite
+                </button>
+                <div className="absolute top-full left-0 mt-2 w-40 bg-light-card dark:bg-dark-card rounded-lg shadow-xl border border-black/10 dark:border-white/10 z-50 overflow-hidden py-1 hidden group-hover:block">
+                  <button onClick={() => handleRewrite('Formal')} className="w-full text-left px-4 py-2 text-sm text-light-text dark:text-dark-text hover:bg-light-bg dark:hover:bg-dark-bg">Formal</button>
+                  <button onClick={() => handleRewrite('Casual')} className="w-full text-left px-4 py-2 text-sm text-light-text dark:text-dark-text hover:bg-light-bg dark:hover:bg-dark-bg">Casual</button>
+                  <button onClick={() => handleRewrite('Poetic')} className="w-full text-left px-4 py-2 text-sm text-light-text dark:text-dark-text hover:bg-light-bg dark:hover:bg-dark-bg">Poetic</button>
+                </div>
+              </div>
+              <button onClick={handleAutoTag} disabled={isLoadingAi} className="flex items-center gap-1 text-sm text-light-text-secondary dark:text-dark-text-secondary hover:text-primary dark:hover:text-primary transition-colors">
+                <FiZap /> Auto-tag
+              </button>
+            </div>
         </div>
 
         <div className="flex items-center gap-4">
+            {isLoadingAi && <span className="text-sm italic text-gray-500">AI is thinking...</span>}
             {status === 'saving' ? <span className="text-sm italic text-gray-500">Guardando...</span> : <span className="h-5"></span>}
         </div>
       </div>
