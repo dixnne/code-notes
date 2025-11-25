@@ -31,6 +31,19 @@ export default function NoteEditor({ note, onNoteUpdated, availableTags = [] }) 
   const [isLoadingAi, setIsLoadingAi] = useState(false);
   const isInitialMount = useRef(true);
 
+  const [isRewriteMenuOpen, setIsRewriteMenuOpen] = useState(false);
+  const rewriteMenuRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (rewriteMenuRef.current && !rewriteMenuRef.current.contains(event.target)) {
+        setIsRewriteMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [rewriteMenuRef]);
+
   useEffect(() => {
     setTitle(note.title);
     setContent(note.content || '');
@@ -171,21 +184,6 @@ export default function NoteEditor({ note, onNoteUpdated, availableTags = [] }) 
               <button onClick={handleSummarize} disabled={isLoadingAi} className="flex items-center gap-1 text-sm text-light-text-secondary dark:text-dark-text-secondary hover:text-primary dark:hover:text-primary transition-colors">
                 <FiZap /> Resumir
               </button>
-              const [isRewriteMenuOpen, setIsRewriteMenuOpen] = useState(false);
-  const rewriteMenuRef = useRef(null);
-
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (rewriteMenuRef.current && !rewriteMenu.current.contains(event.target)) {
-        setIsRewriteMenuOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [rewriteMenuRef]);
-
-//...
-
               <div className="relative" ref={rewriteMenuRef}>
                 <button
                   disabled={isLoadingAi}
