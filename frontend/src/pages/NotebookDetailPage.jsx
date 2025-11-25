@@ -1,33 +1,29 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useParams, Link, useSearchParams } from 'react-router-dom'; // --- 1. Importar useSearchParams ---
-import { 
-  getNotesForNotebook, 
-  createNote, 
-  deleteNote, 
-  getFoldersForNotebook,
-  getNotebooks
-} from '../services/api';
+import ResearchPanel from '../components/ResearchPanel';
+import { FiChevronLeft, FiShare2, FiTag, FiSidebar, FiX, FiCheck, FiSearch } from 'react-icons/fi';
+import { useAuth } from '../contexts/AuthContext';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { getNotesForNotebook, createNote, deleteNote } from '../services/api';
+import { getFoldersForNotebook } from '../services/api';
+import { getNotebooks } from '../services/api';
 import NoteList from '../components/NoteList';
 import NoteEditor from '../components/NoteEditor';
 import DashboardLayout from '../components/DashboardLayout';
 import ShareNotebookModal from '../components/ShareNotebookModal';
-import { FiChevronLeft, FiShare2, FiTag, FiSidebar, FiX, FiCheck } from 'react-icons/fi';
-import { useAuth } from '../contexts/AuthContext';
 
 export default function NotebookDetailPage() {
   const { notebookId } = useParams();
-  // --- 2. Obtener parámetros de búsqueda ---
   const [searchParams] = useSearchParams();
   const requestedNoteId = searchParams.get('noteId');
 
   const [notes, setNotes] = useState([]);
   const [folders, setFolders] = useState([]);
   const [activeNote, setActiveNote] = useState(null);
-  const [currentNotebook, setCurrentNotebook] = useState(null); 
+  const [currentNotebook, setCurrentNotebook] = useState(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  
-  const [selectedTags, setSelectedTags] = useState([]); 
-  const [isTagMenuOpen, setIsTagMenuOpen] = useState(false); 
+  const [isResearchPanelOpen, setIsResearchPanelOpen] = useState(false);
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [isTagMenuOpen, setIsTagMenuOpen] = useState(false);
   const tagMenuRef = useRef(null);
 
   const sidebarRef = useRef(null);
@@ -46,34 +42,30 @@ export default function NotebookDetailPage() {
 
   const loadData = useCallback(async () => {
     if (!notebookId) return;
-    console.log(`DEBUG: Cargando datos Notebook ID: ${notebookId}.`);
     try {
       const [notesRes, foldersRes, notebooksRes] = await Promise.all([
         getNotesForNotebook(notebookId),
         getFoldersForNotebook(notebookId),
-        getNotebooks() 
+        getNotebooks()
       ]);
 
-      const fetchedNotes = notesRes.data || []; 
+      const fetchedNotes = notesRes.data || [];
       const fetchedFolders = foldersRes.data || [];
       const allNotebooks = notebooksRes.data || [];
 
-      const foundNotebook = allNotebooks.find(n => n.id === parseInt(notebookId));
+      const foundNotebook = allNotebooks.find(n => n.id === notebookId);
       setCurrentNotebook(foundNotebook || null);
       
       setNotes(fetchedNotes);
       setFolders(fetchedFolders);
       
-      // --- 3. Lógica de Selección Inteligente ---
       if (!activeNote && fetchedNotes.length > 0) {
         if (requestedNoteId) {
-          // Si hay un ID en la URL, intentamos encontrar esa nota
-          const requestedNote = fetchedNotes.find(n => n.id === parseInt(requestedNoteId));
+          const requestedNote = fetchedNotes.find(n => n.id === requestedNoteId);
           if (requestedNote) {
              setActiveNote(requestedNote);
-             // NOTA: La lógica para abrir la carpeta correspondiente está en NoteList
           } else {
-             setActiveNote(fetchedNotes[0]); // Fallback si no existe
+             setActiveNote(fetchedNotes[0]);
           }
         } else {
           setActiveNote(fetchedNotes[0]);
@@ -82,7 +74,7 @@ export default function NotebookDetailPage() {
     } catch (error) {
       console.error("DEBUG: Error al cargar datos:", error);
     }
-  }, [notebookId, activeNote, requestedNoteId]); // Añadimos requestedNoteId a dependencias
+  }, [notebookId, activeNote, requestedNoteId]);
 
   useEffect(() => {
     loadData();
@@ -140,7 +132,7 @@ export default function NotebookDetailPage() {
   const handleCreateNote = async (type, folderId = null) => {
     if (!notebookId) return;
     try {
-      const response = await createNote("Nueva Nota", parseInt(notebookId), type, folderId);
+      const response = await createNote("Nueva Nota", notebookId, type, folderId);
       const newNote = response.data;
       setNotes(prevNotes => [newNote, ...prevNotes]);
       setActiveNote(newNote);
@@ -168,9 +160,16 @@ export default function NotebookDetailPage() {
     }
   };
 
+  const handleInsertText = (text) => {
+    if (activeNote) {
+      const newContent = activeNote.content ? `${activeNote.content}\n\n${text}` : text;
+      const updatedNote = { ...activeNote, content: newContent };
+      setActiveNote(updatedNote);
+    }
+  };
+
   return (
     <DashboardLayout>
-      {/* Sub-Barra de Navegación */}
       <div className="flex h-14 items-center justify-between border-b border-black/5 bg-light-card px-6 dark:border-white/10 dark:bg-dark-card transition-colors duration-300">
         
         <div className="flex items-center gap-3">
@@ -203,7 +202,6 @@ export default function NotebookDetailPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Botón y menú de Filtrado por Tags */}
           <div className="relative" ref={tagMenuRef}>
               <button 
                 onClick={() => setIsTagMenuOpen(!isTagMenuOpen)}
@@ -267,6 +265,13 @@ export default function NotebookDetailPage() {
             <FiShare2 className="h-4 w-4" />
             Compartir
           </button>
+           <button
+            onClick={() => setIsResearchPanelOpen(!isResearchPanelOpen)}
+            className="flex items-center gap-2 rounded-lg bg-purple-100 px-3 py-1.5 text-sm font-medium text-purple-600 transition-colors hover:bg-purple-200"
+          >
+            <FiSearch className="h-4 w-4" />
+            Research
+          </button>
         </div>
       </div>
 
@@ -291,7 +296,7 @@ export default function NotebookDetailPage() {
               key={activeNote.id}
               note={activeNote}
               onNoteUpdated={handleNoteUpdate}
-              availableTags={allTags} 
+              availableTags={allTags}
             />
           ) : (
             <div className="flex h-full items-center justify-center p-8 text-light-text-secondary dark:text-dark-text-secondary flex-col gap-4 opacity-60">
@@ -303,6 +308,7 @@ export default function NotebookDetailPage() {
       </div>
 
       <ShareNotebookModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} notebook={currentNotebook} />
+      {isResearchPanelOpen && <ResearchPanel onInsertText={handleInsertText} />}
     </DashboardLayout>
   );
 }

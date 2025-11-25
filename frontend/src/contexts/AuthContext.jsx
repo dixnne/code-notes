@@ -78,8 +78,10 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token]); // Se ejecuta cada vez que el token cambia
 
+  const isAuthenticated = !!token;
+
   return (
-    <AuthContext.Provider value={{ token, user, login, register, logout }}>
+    <AuthContext.Provider value={{ token, user, isAuthenticated, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
