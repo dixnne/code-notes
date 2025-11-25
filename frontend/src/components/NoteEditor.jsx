@@ -51,7 +51,7 @@ export default function NoteEditor({ note, onNoteUpdated, availableTags = [] }) 
     setTags(note.tags ? note.tags.map(t => t.tag.name) : []);
     setStatus('idle');
     isInitialMount.current = true;
-  }, [note.id]);
+  }, [note.id, note.content]);
 
   const debouncedTitle = useDebounce(title, 1000);
   const debouncedContent = useDebounce(content, 1000);
