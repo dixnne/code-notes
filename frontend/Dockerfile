@@ -10,6 +10,7 @@ RUN npm cache clean --force && npm install --legacy-peer-deps
 COPY . .
 
 ENV NODE_OPTIONS="--max-old-space-size=2048"
+ENV VITE_API_URL=/api
 
 # Genera la build de producción de React
 RUN npm run build
