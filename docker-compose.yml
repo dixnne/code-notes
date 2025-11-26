@@ -1,67 +1,90 @@
 version: '3.8'
 
+# Production Docker Compose Configuration
 services:
-  # 1. Reverse Proxy que recibe todo el tráfico
+  # 1. Reverse Proxy - Nginx
   nginx:
-    image: nginx:latest
+    image: nginx:alpine
     container_name: codenotes_nginx
+    restart: unless-stopped
     ports:
-      - "80:80"      # Puerto HTTP para redirección a HTTPS
-      - "443:443"    # Puerto HTTPS principal
+      - "80:80"      # HTTP
+      - "443:443"    # HTTPS
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
-      # Montar certificados SSL (obtenidos con Certbot, por ejemplo)
-      - /etc/letsencrypt:/etc/letsencrypt 
+      # Mount SSL certificates (e.g., from Let's Encrypt)
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
-      - backend
-      - frontend
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
     networks:
       - codenotes-network
 
-  # 2. Backend API con NestJS
+  # 2. Backend API - NestJS
   backend:
     build:
       context: ./backend
+      dockerfile: Dockerfile
     container_name: codenotes_backend
     restart: unless-stopped
-    env_file: .env # Carga las variables de entorno desde el archivo .env
+    env_file: .env
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - JWT_SECRET=${JWT_SECRET}
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - NODE_ENV=production
+      - PORT=3000
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    command: sh -c "npx prisma migrate deploy && npm run start:prod"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     networks:
       - codenotes-network
 
-  # 3. Frontend con React
+  # 3. Frontend - React (built and served by Nginx)
   frontend:
     build:
       context: ./frontend
+      dockerfile: Dockerfile
     container_name: codenotes_frontend
     restart: unless-stopped
     networks:
       - codenotes-network
 
-  # 4. Base de Datos PostgreSQL
+  # 4. Database - PostgreSQL
   db:
     image: postgres:15-alpine
     container_name: codenotes_db
     restart: unless-stopped
-    env_file: .env # Carga las variables para el usuario/pass de la BD
+    env_file: .env
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - codenotes-network
 
-# Red privada para que los contenedores se comuniquen
+# Private network for container communication
 networks:
   codenotes-network:
     driver: bridge
 
-# Volumen para persistir los datos de la BD
+# Volume to persist database data
 volumes:
   postgres-data:
+
