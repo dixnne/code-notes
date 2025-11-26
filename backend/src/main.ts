@@ -11,7 +11,7 @@ async function bootstrap() {
   // Configuración dinámica de CORS desde variables de entorno
   const corsOrigins = process.env.CORS_ORIGINS 
     ? process.env.CORS_ORIGINS.split(',').map(origin => origin.trim())
-    : ['http://localhost:5173', 'http://localhost:3000'];
+    : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost'];
 
   app.enableCors({
     origin: corsOrigins,

@@ -1,27 +1,29 @@
 // frontend/src/services/api.js
 import axios from 'axios';
+import { Preferences } from '@capacitor/preferences';
 
-let apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+// El cliente de axios ahora se inicializa sin una baseURL por defecto.
+export const apiClient = axios.create({
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
+// La URL base se inyectará dinámicamente.
 export const setApiBaseUrl = (url) => {
-  apiBaseUrl = url;
   apiClient.defaults.baseURL = url;
 };
 
-export const getApiBaseUrl = () => apiBaseUrl;
+// El interceptor ahora es asíncrono para poder leer de Preferences.
+apiClient.interceptors.request.use(async (config) => {
+  const { value: token } = await Preferences.get({ key: 'token' });
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+}, (error) => Promise.reject(error));
 
-export const apiClient = axios.create({
-  baseURL: apiBaseUrl,
-});
-apiClient.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token');
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  }, (error) => Promise.reject(error)
-);
 
-export const apiRegister = (username, email, password) => apiClient.post('/auth/register', { username, email, password });
-export const apiGetProfile = () => apiClient.get('/auth/profile');
 export const getNotebooks = () => apiClient.get('/notebooks');
 export const createNotebook = (title) => apiClient.post('/notebooks', { title });
 export const updateNotebook = (id, title) => apiClient.patch(`/notebooks/${id}`, { title });

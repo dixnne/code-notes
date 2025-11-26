@@ -20,6 +20,7 @@ export const ApiConfigProvider = ({ children }) => {
     if (Capacitor.isNativePlatform()) {
       try {
         const { value } = await Preferences.get({ key: API_URL_KEY });
+        console.log('[Debug] Loaded API URL from Preferences:', value);
         if (value) {
           setApiUrl(value);
         } else {
