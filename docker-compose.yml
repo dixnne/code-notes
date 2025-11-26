@@ -8,7 +8,7 @@ services:
     container_name: codenotes_nginx
     restart: unless-stopped
     ports:
-      - "80:80"      # HTTP
+      - "3003:80"      # HTTP
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
