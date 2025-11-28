@@ -1,90 +1,136 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { generateText } from '../services/api';
-import { FiSearch, FiChevronDown, FiX } from 'react-icons/fi';
+import { FiSearch, FiChevronDown, FiX, FiSend, FiCpu } from 'react-icons/fi';
 import AiLoadingIndicator from './AiLoadingIndicator';
 
 const ResearchPanel = ({ onInsertText }) => {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false); // Iniciamos cerrado por defecto para no estorbar
   const [query, setQuery] = useState('');
   const [history, setHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [history, isLoading]);
 
   const handleQuery = async () => {
-    if (!query) return;
+    if (!query.trim()) return;
     setIsLoading(true);
     const newHistory = [...history, { type: 'user', text: query }];
     setHistory(newHistory);
+    setQuery(''); // Limpiar input inmediatamente
+    
     try {
       const response = await generateText(query);
       setHistory([...newHistory, { type: 'ai', text: response.data }]);
     } catch (error) {
       console.error('Error in research query:', error);
-      setHistory([...newHistory, { type: 'ai', text: 'Sorry, I could not fetch a response.' }]);
+      setHistory([...newHistory, { type: 'ai', text: 'Lo siento, hubo un error al conectar con la IA. Verifica tu configuración.' }]);
     }
-    setQuery('');
     setIsLoading(false);
   };
 
   if (!isOpen) {
     return (
-      <div className="fixed bottom-4 right-4 z-50">
-        <button onClick={() => setIsOpen(true)} className="bg-primary text-white p-4 rounded-full shadow-lg hover:bg-primary-dark">
-          <FiSearch size={24} />
+      <div className="fixed bottom-6 right-6 z-50 animate-fade-in">
+        <button 
+          onClick={() => setIsOpen(true)} 
+          className="bg-gradient-to-r from-primary to-accent1 text-white p-4 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 group"
+          title="Abrir Asistente IA"
+        >
+          <FiSearch size={24} className="group-hover:rotate-90 transition-transform duration-300" />
         </button>
       </div>
     );
   }
 
   return (
-    <div className="fixed bottom-4 right-4 w-96 h-[60vh] bg-light-card dark:bg-dark-card shadow-2xl rounded-lg flex flex-col z-50 border-2 border-transparent hover:border-purple-500/20 transition-all duration-300">
-      <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-500/5 via-pink-500/5 to-blue-500/5">
-        <h3 className="font-bold flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-lg">
-            <FiSearch size={16} />
+    <div className="fixed bottom-6 right-6 w-96 h-[60vh] bg-light-card dark:bg-dark-card shadow-2xl rounded-xl flex flex-col z-50 border border-primary/20 dark:border-accent1/20 overflow-hidden animate-fade-in-up transition-all duration-300">
+      
+      {/* --- Header del Panel --- */}
+      <div className="flex justify-between items-center p-4 border-b border-light-text-secondary/10 dark:border-dark-text-secondary/10 bg-gradient-to-r from-primary/5 to-accent1/5">
+        <h3 className="font-bold flex items-center gap-2 text-sm">
+          <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary to-accent1 text-white shadow-sm">
+            <FiCpu size={16} />
           </div>
-          <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 dark:from-purple-400 dark:via-pink-400 dark:to-blue-400 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-primary via-accent1 to-primary bg-clip-text text-transparent font-display text-lg">
             Asistente de Investigación
           </span>
         </h3>
-        <button onClick={() => setIsOpen(false)} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
-          <FiX />
+        <button 
+          onClick={() => setIsOpen(false)} 
+          className="text-light-text-secondary hover:text-primary dark:text-dark-text-secondary dark:hover:text-accent1 transition-colors p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/5"
+        >
+          <FiX size={18} />
         </button>
       </div>
-      <div className="flex-1 p-4 overflow-y-auto">
+
+      {/* --- Área de Chat --- */}
+      <div className="flex-1 p-4 overflow-y-auto bg-light-bg/50 dark:bg-dark-bg/50 space-y-4 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+        {history.length === 0 && (
+           <div className="flex flex-col items-center justify-center h-full text-center text-light-text-secondary/60 dark:text-dark-text-secondary/60 text-sm px-4 opacity-70">
+              <FiSearch size={32} className="mb-3 text-primary/40" />
+              <p>Pregúntame sobre conceptos, código o documentación.</p>
+           </div>
+        )}
+
         {history.map((item, index) => (
-          <div key={index} className={`mb-4 animate-ai-fade-in ${item.type === 'user' ? 'text-right' : ''}`}>
-            <div className={`p-2 rounded-lg inline-block ${item.type === 'user' ? 'bg-primary text-white' : 'bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-blue-900/20 border border-purple-200/30 dark:border-purple-500/30'}`}>
-              <p className={item.type === 'ai' ? 'text-light-text dark:text-dark-text' : ''}>{item.text}</p>
-              {item.type === 'ai' && (
-                <button onClick={() => onInsertText(item.text)} className="mt-2 text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-full hover:shadow-lg hover:scale-105 transition-all duration-200">
-                  Insertar en Nota
-                </button>
-              )}
+          <div key={index} className={`flex flex-col ${item.type === 'user' ? 'items-end' : 'items-start'} animate-fade-in`}>
+            <div className={`p-3 rounded-2xl max-w-[85%] text-sm shadow-sm border ${
+              item.type === 'user' 
+                ? 'bg-primary text-white border-primary rounded-tr-none' 
+                : 'bg-light-card dark:bg-dark-card text-light-text dark:text-dark-text border-light-text-secondary/10 dark:border-dark-text-secondary/10 rounded-tl-none'
+            }`}>
+              <p className="whitespace-pre-wrap font-sans leading-relaxed">{item.text}</p>
             </div>
+            
+            {/* Botón de acción para respuestas de IA */}
+            {item.type === 'ai' && (
+              <button 
+                onClick={() => onInsertText(item.text)} 
+                className="mt-2 text-xs flex items-center gap-1 px-3 py-1 rounded-full bg-accent1/10 text-accent1 hover:bg-accent1 hover:text-white transition-all duration-200 border border-accent1/20 group"
+              >
+                <FiChevronDown size={12} className="group-hover:translate-y-0.5 transition-transform"/> Insertar en nota
+              </button>
+            )}
           </div>
         ))}
+        
         {isLoading && (
-          <div className="flex justify-center py-4">
-            <AiLoadingIndicator />
+          <div className="flex justify-center py-2">
+            <AiLoadingIndicator text="Procesando..." className="scale-90" />
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-        <div className="flex gap-2">
-          <input
-            type="text"
+
+      {/* --- Footer / Input --- */}
+      <div className="p-3 border-t border-light-text-secondary/10 dark:border-dark-text-secondary/10 bg-light-card dark:bg-dark-card">
+        <div className="flex gap-2 items-end bg-light-bg dark:bg-dark-bg rounded-xl border border-light-text-secondary/20 dark:border-dark-text-secondary/20 p-2 focus-within:ring-2 focus-within:ring-primary/50 focus-within:border-primary transition-all">
+          <textarea
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleQuery()}
-            placeholder="Pregunta algo..."
-            className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-light-card dark:bg-dark-card focus:outline-none focus:ring-2 focus:ring-primary"
+            onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleQuery())}
+            placeholder="Escribe tu consulta..."
+            className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-light-text dark:text-dark-text placeholder-light-text-secondary/50 dark:placeholder-dark-text-secondary/50 resize-none max-h-24 py-2 px-1 scrollbar-hide"
+            rows={1}
+            style={{ minHeight: '2.5rem' }}
           />
-          <button onClick={handleQuery} disabled={isLoading} className={`px-4 py-2 rounded-md font-medium transition-all duration-300 ${
-            isLoading 
-              ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 text-white animate-ai-shimmer bg-[length:200%_100%] shadow-lg' 
-              : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-lg hover:scale-105'
-          }`}>
-            {isLoading ? 'Pensando...' : 'Preguntar'}
+          <button 
+            onClick={handleQuery} 
+            disabled={isLoading || !query.trim()} 
+            className={`p-2 rounded-lg mb-0.5 transition-all duration-200 ${
+              isLoading || !query.trim()
+                ? 'bg-gray-200 text-gray-400 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed'
+                : 'bg-gradient-to-r from-primary to-accent1 text-white shadow-md hover:shadow-lg active:scale-95'
+            }`}
+          >
+            <FiSend size={16} className={isLoading ? 'animate-pulse' : ''} />
           </button>
         </div>
       </div>

@@ -24,12 +24,17 @@ export default function NotebookDetailPage() {
   const [isResearchPanelOpen, setIsResearchPanelOpen] = useState(false);
   const [selectedTags, setSelectedTags] = useState([]);
   const [isTagMenuOpen, setIsTagMenuOpen] = useState(false);
-  const tagMenuRef = useRef(null);
+  
+  // --- NUEVO ESTADO: Versión del editor ---
+  // Usado para forzar la actualización del editor cuando la IA inserta texto
+  const [editorVersion, setEditorVersion] = useState(0);
 
+  const tagMenuRef = useRef(null);
   const sidebarRef = useRef(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isResizing, setIsResizing] = useState(false);
 
+  // ... (useEffect de click outside y loadData se mantienen igual) ...
   useEffect(() => {
     function handleClickOutside(event) {
       if (tagMenuRef.current && !tagMenuRef.current.contains(event.target)) {
@@ -80,6 +85,7 @@ export default function NotebookDetailPage() {
     loadData();
   }, [loadData]);
 
+  // ... (Lógica de tags y resize sin cambios) ...
   const allTags = useMemo(() => {
     const tags = new Set();
     notes.forEach(note => {
@@ -129,6 +135,7 @@ export default function NotebookDetailPage() {
   }, []);
 
   const handleSelectNote = (note) => setActiveNote(note);
+  
   const handleCreateNote = async (type, folderId = null) => {
     if (!notebookId) return;
     try {
@@ -140,12 +147,14 @@ export default function NotebookDetailPage() {
       console.error("Error al crear la nota:", error);
     }
   };
+
   const handleNoteUpdate = (updatedNote) => {
     setNotes(prevNotes => prevNotes.map((note) => (note.id === updatedNote.id ? updatedNote : note)));
     if (activeNote && activeNote.id === updatedNote.id) {
         setActiveNote(updatedNote);
     }
   };
+
   const handleDeleteNote = async (noteId) => {
     if (!window.confirm("¿Estás seguro?")) return;
     try {
@@ -160,11 +169,14 @@ export default function NotebookDetailPage() {
     }
   };
 
+  // --- MANEJADOR DE INSERCIÓN DE TEXTO ---
   const handleInsertText = async (text) => {
     if (activeNote) {
       const newContent = activeNote.content ? `${activeNote.content}\n\n${text}` : text;
       const updatedNote = { ...activeNote, content: newContent };
+      
       setActiveNote(updatedNote);
+      setEditorVersion(prev => prev + 1);
       
       try {
         const response = await updateNote(activeNote.id, { content: newContent });
@@ -175,57 +187,62 @@ export default function NotebookDetailPage() {
     }
   };
 
+  // Clases base uniformes para botones de la barra
+  const btnBase = "flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 active:scale-95 border shadow-sm";
+
   return (
     <DashboardLayout>
-      <div className="flex h-14 items-center justify-between border-b border-black/5 bg-light-card px-6 dark:border-white/10 dark:bg-dark-card transition-colors duration-300">
+      {/* Sub-Barra de Navegación */}
+      <div className="flex h-14 items-center justify-between border-b border-light-text-secondary/20 bg-light-card px-6 dark:border-dark-text-secondary/20 dark:bg-dark-card transition-colors duration-300 sticky top-0 z-20">
         
+        {/* Izquierda: Navegación */}
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className={`p-1.5 rounded-md transition-colors ${
-                isSidebarOpen 
-                ? 'bg-primary/10 text-primary dark:bg-secondary/10 dark:text-secondary' 
-                : 'text-light-text-secondary hover:bg-light-bg dark:text-dark-text-secondary dark:hover:bg-dark-bg'
-            }`}
+            className="p-2 rounded-md text-light-text-secondary hover:bg-light-bg hover:text-primary dark:text-dark-text-secondary dark:hover:bg-dark-bg dark:hover:text-primary transition-colors"
           >
             <FiSidebar size={18} />
           </button>
 
-          <div className="h-4 w-[1px] bg-black/10 dark:bg-white/10 mx-1"></div>
+          <div className="h-5 w-[1px] bg-light-text-secondary/20 dark:bg-dark-text-secondary/20 mx-1 hidden md:block"></div>
 
           <Link
             to="/"
-            className="flex items-center gap-2 rounded-md px-2 py-1 text-sm font-medium text-light-text-secondary transition-colors hover:text-primary dark:text-dark-text-secondary dark:hover:text-secondary"
+            className="flex items-center gap-1 md:gap-2 rounded-md px-2 py-1 text-sm font-medium text-light-text-secondary hover:text-primary dark:text-dark-text-secondary dark:hover:text-accent1 transition-colors truncate"
           >
             <FiChevronLeft className="h-4 w-4" />
-            Volver
+            <span className="hidden sm:inline">Volver</span>
           </Link>
           
           {currentNotebook && (
-             <span className="ml-2 text-sm font-bold text-light-text dark:text-dark-text hidden sm:inline fade-in">
-                / {currentNotebook.title}
+             <span className="text-sm font-bold text-light-text dark:text-dark-text truncate max-w-[100px] sm:max-w-[200px] md:max-w-xs fade-in border-l border-light-text-secondary/20 dark:border-dark-text-secondary/20 pl-3 ml-1">
+                {currentNotebook.title}
              </span>
           )}
         </div>
 
         <div className="flex items-center gap-3">
+          
+          {/* 1. Botón TAGS (Naranja) */}
           <div className="relative" ref={tagMenuRef}>
               <button 
                 onClick={() => setIsTagMenuOpen(!isTagMenuOpen)}
-                className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-all shadow-sm ${
+                className={`${btnBase} ${
                     selectedTags.length > 0 
-                    ? 'bg-accent1 text-white hover:bg-accent2 shadow-md ring-2 ring-accent1/20' 
-                    : 'bg-light-bg text-light-text hover:bg-gray-200 dark:bg-dark-bg dark:text-dark-text dark:hover:bg-gray-700 border border-black/5 dark:border-white/5'
+                    ? 'bg-accent1 text-white border-accent1 hover:bg-accent2' 
+                    : 'bg-white dark:bg-gray-800 border-accent1/30 text-accent1 hover:bg-accent1/10'
                 }`}
+                title="Filtrar etiquetas"
               >
-                <FiTag className={`h-4 w-4 ${selectedTags.length > 0 ? 'text-white' : 'text-light-text-secondary dark:text-dark-text-secondary'}`} />
-                {selectedTags.length > 0 ? `Filtrando (${selectedTags.length})` : 'Filtrar Tags'}
+                <FiTag className={selectedTags.length > 0 ? 'text-white' : 'text-accent1'} />
+                <span className="hidden md:inline">{selectedTags.length > 0 ? `Filtros (${selectedTags.length})` : 'Tags'}</span>
               </button>
               
+              {/* Dropdown Tags */}
               {isTagMenuOpen && (
-                <div className="absolute right-0 top-full mt-2 w-64 rounded-lg border border-black/10 bg-light-card shadow-xl dark:border-white/10 dark:bg-dark-card z-50 overflow-hidden ring-1 ring-black/5">
-                    <div className="p-3 border-b border-black/5 dark:border-white/5 bg-light-bg/50 dark:bg-dark-bg/50">
-                        <span className="text-xs font-bold text-light-text-secondary dark:text-dark-text-secondary uppercase tracking-wider">Selecciona etiquetas</span>
+                <div className="absolute right-0 top-full mt-2 w-64 rounded-xl border border-light-text-secondary/20 bg-light-card shadow-xl dark:border-dark-text-secondary/20 dark:bg-dark-card z-50 overflow-hidden animate-in fade-in zoom-in duration-100 origin-top-right ring-1 ring-black/5">
+                    <div className="p-3 border-b border-light-text-secondary/10 dark:border-dark-text-secondary/10 bg-light-bg/50 dark:bg-dark-bg/50">
+                        <span className="text-xs font-bold text-light-text-secondary dark:text-dark-text-secondary uppercase tracking-wider">Filtrar por etiquetas</span>
                     </div>
                     <div className="max-h-60 overflow-y-auto p-1">
                         {allTags.length === 0 ? (
@@ -242,7 +259,7 @@ export default function NotebookDetailPage() {
                                     }`}
                                 >
                                     <span className="flex items-center gap-2">
-                                        <FiTag size={12} className={selectedTags.includes(tag) ? 'text-accent1' : 'text-gray-400'} />
+                                        <FiTag size={12} className={selectedTags.includes(tag) ? 'text-accent1' : 'text-light-text-secondary dark:text-dark-text-secondary'} />
                                         {tag}
                                     </span>
                                     {selectedTags.includes(tag) && <FiCheck className="text-accent1" />}
@@ -251,7 +268,7 @@ export default function NotebookDetailPage() {
                         )}
                     </div>
                     {selectedTags.length > 0 && (
-                        <div className="p-2 border-t border-black/5 dark:border-white/5 bg-light-bg dark:bg-dark-bg">
+                        <div className="p-2 border-t border-light-text-secondary/10 dark:border-dark-text-secondary/10 bg-light-bg/50 dark:bg-dark-bg/50">
                             <button 
                                 onClick={() => { setSelectedTags([]); setIsTagMenuOpen(false); }}
                                 className="w-full flex items-center justify-center gap-2 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
@@ -264,30 +281,37 @@ export default function NotebookDetailPage() {
               )}
           </div>
 
+          {/* 2. Botón COMPARTIR (Azul) */}
           <button 
             onClick={() => setIsShareModalOpen(true)}
             disabled={!currentNotebook}
-            className="flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/20 hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed dark:bg-primary/20 dark:text-secondary"
+            className={`${btnBase} bg-white dark:bg-gray-800 border-primary/30 text-primary hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed`}
+            title="Compartir notebook"
           >
-            <FiShare2 className="h-4 w-4" />
-            Compartir
+            <FiShare2 />
+            <span className="hidden md:inline">Compartir</span>
           </button>
+
+           {/* 3. Botón INVESTIGAR (Gradiente) */}
            <button
             onClick={() => setIsResearchPanelOpen(!isResearchPanelOpen)}
-            className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-300 ${
+            className={`${btnBase} border-transparent text-white shadow-md hover:opacity-90 ${
               isResearchPanelOpen
-                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg scale-105'
-                : 'bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-purple-600 dark:text-purple-400 hover:shadow-lg hover:scale-105'
+                ? 'bg-gradient-to-r from-primary to-accent1 ring-2 ring-offset-1 ring-primary shadow-lg shadow-primary/30'
+                : 'bg-gradient-to-r from-primary to-accent1 hover:shadow-lg'
             }`}
+            title="Asistente IA"
           >
-            <FiSearch className="h-4 w-4" />
-            Investigar
+            <FiSearch className={isResearchPanelOpen ? "animate-pulse" : ""} />
+            <span className="hidden md:inline font-bold">Investigar</span>
           </button>
+
         </div>
       </div>
 
-      <div className="flex h-[calc(100vh-14rem)] w-full overflow-hidden relative">
-        <div ref={sidebarRef} className={`relative flex-shrink-0 h-full bg-light-card dark:bg-dark-card border-r border-black/10 dark:border-white/10 ${!isSidebarOpen ? 'hidden' : ''}`} style={{ width: '300px' }}>
+      {/* Contenedor Principal */}
+      <div className="flex h-[calc(100vh-13rem)] w-full overflow-hidden relative">
+        <div ref={sidebarRef} className={`relative flex-shrink-0 h-full bg-light-card dark:bg-dark-card border-r border-light-text-secondary/20 dark:border-dark-text-secondary/20 ${!isSidebarOpen ? 'hidden' : ''}`} style={{ width: '300px' }}>
             <NoteList
                 notes={filteredNotes} 
                 folders={folders}
@@ -304,7 +328,7 @@ export default function NotebookDetailPage() {
         <div className="flex-1 h-full overflow-hidden bg-light-bg dark:bg-dark-bg min-w-0">
           {activeNote && activeNote.id ? (
             <NoteEditor
-              key={activeNote.id}
+              key={`${activeNote.id}-${editorVersion}`}
               note={activeNote}
               onNoteUpdated={handleNoteUpdate}
               availableTags={allTags}
@@ -312,14 +336,22 @@ export default function NotebookDetailPage() {
           ) : (
             <div className="flex h-full items-center justify-center p-8 text-light-text-secondary dark:text-dark-text-secondary flex-col gap-4 opacity-60">
               <FiSidebar size={48} strokeWidth={1} />
-              <p className="text-lg font-medium">Selecciona una nota para editar o crea una nueva.</p>
+              <p className="text-lg font-medium text-center">Selecciona una nota para editar<br/>o crea una nueva.</p>
             </div>
           )}
         </div>
       </div>
 
       <ShareNotebookModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} notebook={currentNotebook} />
-      {isResearchPanelOpen && <ResearchPanel onInsertText={handleInsertText} />}
+      
+      {/* Pasar activeNoteContent para la función de reescritura */}
+      {isResearchPanelOpen && (
+        <ResearchPanel 
+            onInsertText={handleInsertText} 
+            onClose={() => setIsResearchPanelOpen(false)} 
+            activeNoteContent={activeNote?.content || ''}
+        />
+      )}
     </DashboardLayout>
   );
 }

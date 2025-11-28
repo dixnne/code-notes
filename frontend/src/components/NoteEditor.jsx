@@ -7,7 +7,7 @@ import { javascript } from '@codemirror/lang-javascript';
 import { python } from '@codemirror/lang-python';
 import { html } from '@codemirror/lang-html';
 import { githubLight, githubDark } from '@uiw/codemirror-theme-github';
-import { FiCode, FiFileText, FiZap } from 'react-icons/fi';
+import { FiCode, FiFileText, FiZap, FiChevronDown, FiCpu } from 'react-icons/fi';
 import TagInput from './TagInput';
 import AiLoadingIndicator from './AiLoadingIndicator';
 
@@ -20,7 +20,6 @@ function useDebounce(value, delay) {
   return debouncedValue;
 }
 
-// --- CAMBIO: Recibimos 'availableTags' como prop ---
 export default function NoteEditor({ note, onNoteUpdated, availableTags = [] }) {
   const { theme } = useTheme(); 
   const [title, setTitle] = useState(note.title);
@@ -32,18 +31,26 @@ export default function NoteEditor({ note, onNoteUpdated, availableTags = [] }) 
   const [isLoadingAi, setIsLoadingAi] = useState(false);
   const isInitialMount = useRef(true);
 
-  const [isRewriteMenuOpen, setIsRewriteMenuOpen] = useState(false);
-  const rewriteMenuRef = useRef(null);
+  // Estado para el menú unificado de IA
+  const [isAiMenuOpen, setIsAiMenuOpen] = useState(false);
+  
+  // Refs separados para móvil y escritorio para manejar el click outside correctamente
+  const desktopMenuRef = useRef(null);
+  const mobileMenuRef = useRef(null);
 
+  // Cerrar menú al hacer click fuera (revisa ambos refs)
   useEffect(() => {
     function handleClickOutside(event) {
-      if (rewriteMenuRef.current && !rewriteMenuRef.current.contains(event.target)) {
-        setIsRewriteMenuOpen(false);
+      const clickedDesktop = desktopMenuRef.current && desktopMenuRef.current.contains(event.target);
+      const clickedMobile = mobileMenuRef.current && mobileMenuRef.current.contains(event.target);
+      
+      if (!clickedDesktop && !clickedMobile) {
+        setIsAiMenuOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [rewriteMenuRef]);
+  }, [desktopMenuRef, mobileMenuRef]);
 
   useEffect(() => {
     setTitle(note.title);
@@ -52,7 +59,7 @@ export default function NoteEditor({ note, onNoteUpdated, availableTags = [] }) 
     setTags(note.tags ? note.tags.map(t => t.tag.name) : []);
     setStatus('idle');
     isInitialMount.current = true;
-  }, [note.id, note.content]);
+  }, [note.id]); 
 
   const debouncedTitle = useDebounce(title, 1000);
   const debouncedContent = useDebounce(content, 1000);
@@ -85,8 +92,11 @@ export default function NoteEditor({ note, onNoteUpdated, availableTags = [] }) 
     }
   }, [debouncedTitle, debouncedContent, language, debouncedTags, handleSave]);
 
+  // --- FUNCIONES DE IA ---
+
   const handleSummarize = async () => {
     setIsLoadingAi(true);
+    setIsAiMenuOpen(false);
     try {
       const response = await summarizeText(content);
       setContent(response.data);
@@ -98,6 +108,7 @@ export default function NoteEditor({ note, onNoteUpdated, availableTags = [] }) 
 
   const handleRewrite = async (style) => {
     setIsLoadingAi(true);
+    
     try {
       const response = await rewriteText(content, style);
       setContent(response.data);
@@ -109,6 +120,7 @@ export default function NoteEditor({ note, onNoteUpdated, availableTags = [] }) 
 
   const handleAutoTag = async () => {
     setIsLoadingAi(true);
+    setIsAiMenuOpen(false);
     try {
       const response = await autoTag(content);
       const newTags = response.data;
@@ -121,6 +133,7 @@ export default function NoteEditor({ note, onNoteUpdated, availableTags = [] }) 
 
   const handleAutoTitle = async () => {
     setIsLoadingAi(true);
+    setIsAiMenuOpen(false);
     try {
       const response = await autoTitle(content);
       setTitle(response.data);
@@ -165,102 +178,113 @@ export default function NoteEditor({ note, onNoteUpdated, availableTags = [] }) 
     </div>
   );
 
+  const rewriteOptions = ['Formal', 'Casual', 'Poetic'];
+
+  // Componente del Menú Dropdown (Reutilizable)
+  const AiDropdownMenu = () => (
+    <div className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden py-1 animate-in fade-in zoom-in duration-100 origin-top-right">
+        <div className="px-3 py-2 text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-100 dark:border-gray-700 mb-1">
+            Generación IA
+        </div>
+        <button onClick={handleSummarize} className="w-full text-left px-4 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"><span>📝</span> Resumir Nota</button>
+        <button onClick={handleAutoTag} className="w-full text-left px-4 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"><span>🏷️</span> Generar Tags</button>
+        <button onClick={handleAutoTitle} className="w-full text-left px-4 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"><span>T</span> Generar Título</button>
+        <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+        <div className="px-3 py-1 text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Reescribir</div>
+        {rewriteOptions.map((tone) => (
+            <button onClick={() => handleRewrite(tone)} className="w-full text-left px-6 py-1.5 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"><span>✨</span> {tone}</button>
+        ))}
+    </div>
+  );
+
   return (
     <div className="flex h-full w-full flex-col bg-white dark:bg-gray-900">
-      <div className="flex items-center justify-between px-6 py-2 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-4">
-            <div className={`flex items-center text-sm font-medium px-3 py-1 rounded-full ${note.type === 'code' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
-                {note.type === 'code' ? <FiCode className="mr-2" /> : <FiFileText className="mr-2" />}
-                {note.type === 'code' ? "Código" : "Markdown"}
-            </div>
+      
+      {/* --- HEADER UNIFICADO --- */}
+      <div className="flex flex-col border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 transition-colors duration-300">
+        
+        {/* CONTENEDOR PRINCIPAL FLEXBOX */}
+        {/* En móvil es columna, en desktop fila */}
+        <div className="flex flex-wrap md:flex-nowrap items-center min-h-[3.5rem]">
             
-            {note.type === 'code' && (
-                <select 
-                    value={language} 
-                    onChange={(e) => setLanguage(e.target.value)}
-                    className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-transparent text-gray-700 dark:text-gray-300 focus:outline-none cursor-pointer"
-                >
-                    <option value="javascript">JavaScript</option>
-                    <option value="python">Python</option>
-                    <option value="html">HTML/XML</option>
-                </select>
-            )}
-            
-            <div className="h-6 w-[1px] bg-gray-200 dark:bg-gray-700 mx-2"></div>
-            
-            <TagInput tags={tags} onChange={setTags} suggestions={availableTags} />
-
-            <div className="h-6 w-[1px] bg-gray-200 dark:bg-gray-700 mx-2"></div>
-
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={handleSummarize} 
-                disabled={isLoadingAi} 
-                className={`flex items-center gap-1 text-sm px-2 py-1 rounded-lg transition-all duration-300 ${
-                  isLoadingAi 
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white animate-ai-shimmer bg-[length:200%_100%]' 
-                    : 'text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20'
-                }`}
-              >
-                <FiZap className={isLoadingAi ? 'animate-spin' : ''} /> Resumir
-              </button>
-              <div className="relative" ref={rewriteMenuRef}>
-                <button
-                  disabled={isLoadingAi}
-                  onClick={() => setIsRewriteMenuOpen(!isRewriteMenuOpen)}
-                  className={`flex items-center gap-1 text-sm px-2 py-1 rounded-lg transition-all duration-300 ${
-                    isLoadingAi 
-                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white animate-ai-shimmer bg-[length:200%_100%]' 
-                      : 'text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20'
-                  }`}
-                >
-                  <FiZap className={isLoadingAi ? 'animate-spin' : ''} /> Reescribir
-                </button>
-                {isRewriteMenuOpen && (
-                  <div className="absolute top-full left-0 mt-2 w-40 bg-light-card dark:bg-dark-card rounded-lg shadow-xl border border-purple-200/30 dark:border-purple-500/30 z-50 overflow-hidden py-1">
-                    <button onClick={() => { handleRewrite('Formal'); setIsRewriteMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-light-text dark:text-dark-text hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 dark:hover:from-purple-900/20 dark:hover:to-pink-900/20 transition-all">Formal</button>
-                    <button onClick={() => { handleRewrite('Casual'); setIsRewriteMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-light-text dark:text-dark-text hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 dark:hover:from-purple-900/20 dark:hover:to-pink-900/20 transition-all">Casual</button>
-                    <button onClick={() => { handleRewrite('Poetic'); setIsRewriteMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-light-text dark:text-dark-text hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 dark:hover:from-purple-900/20 dark:hover:to-pink-900/20 transition-all">Poético</button>
-                  </div>
+            {/* SECCIÓN 1: Tipo, Lenguaje (Siempre visible a la izquierda) */}
+            {/* En móvil ocupa la mitad o lo necesario, en desktop es el inicio */}
+            <div className="flex items-center gap-3 px-4 py-2 flex-shrink-0">
+                <div className={`flex items-center text-xs font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-md shadow-sm ${note.type === 'code' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
+                    {note.type === 'code' ? <FiCode className="mr-1.5" /> : <FiFileText className="mr-1.5" />}
+                    {note.type === 'code' ? "Código" : "Markdown"}
+                </div>
+                
+                {note.type === 'code' && (
+                    <select 
+                        value={language} 
+                        onChange={(e) => setLanguage(e.target.value)}
+                        className="text-xs font-medium border border-gray-300 dark:border-gray-600 rounded px-2 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                    >
+                        <option value="javascript">JavaScript</option>
+                        <option value="python">Python</option>
+                        <option value="html">HTML/XML</option>
+                    </select>
                 )}
-              </div>
-              <button 
-                onClick={handleAutoTag} 
-                disabled={isLoadingAi} 
-                className={`flex items-center gap-1 text-sm px-2 py-1 rounded-lg transition-all duration-300 ${
-                  isLoadingAi 
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white animate-ai-shimmer bg-[length:200%_100%]' 
-                    : 'text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20'
-                }`}
-              >
-                <FiZap className={isLoadingAi ? 'animate-spin' : ''} /> Auto-etiquetar
-              </button>
-              <button 
-                onClick={handleAutoTitle} 
-                disabled={isLoadingAi} 
-                className={`flex items-center gap-1 text-sm px-2 py-1 rounded-lg transition-all duration-300 ${
-                  isLoadingAi 
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white animate-ai-shimmer bg-[length:200%_100%]' 
-                    : 'text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20'
-                }`}
-              >
-                <FiZap className={isLoadingAi ? 'animate-spin' : ''} /> Auto-titular
-              </button>
             </div>
-        </div>
 
-        <div className="flex items-center gap-4">
-            {isLoadingAi && <AiLoadingIndicator />}
-            {status === 'saving' ? <span className="text-sm italic text-gray-500">Guardando...</span> : <span className="h-5"></span>}
+            {/* SECCIÓN 2 (MÓVIL SOLAMENTE): Controles derechos (IA Icono + Estado) */}
+            <div className="flex md:hidden ml-auto px-4 items-center gap-3">
+                 <div className="flex-shrink-0">
+                    {status === 'saving' ? <span className="text-xs italic text-gray-500">...</span> : null}
+                </div>
+                {/* Botón IA Móvil (Solo Icono) */}
+                <div className="relative" ref={mobileMenuRef}>
+                    <button 
+                        onClick={() => setIsAiMenuOpen(!isAiMenuOpen)}
+                        className={`p-2 rounded-md border transition-all duration-200 ${isLoadingAi ? 'bg-gradient-to-r from-primary to-accent1 text-white border-transparent animate-pulse' : 'bg-white dark:bg-gray-700 text-primary dark:text-accent1 border-primary/20 dark:border-accent1/20'}`}
+                    >
+                        <FiCpu size={16} className={isLoadingAi ? 'animate-spin' : ''} />
+                    </button>
+                    {isAiMenuOpen && <AiDropdownMenu />}
+                </div>
+            </div>
+
+            {/* SECCIÓN 3: Tags (Fila completa en móvil, central en desktop) */}
+            {/* Ajuste: pb-4 para dar más espacio abajo en móvil. min-h-[3.5rem] para asegurar altura suficiente. */}
+            <div className="w-full md:w-auto md:flex-1 px-4 pb-4 md:pb-0 md:py-0 overflow-x-auto scrollbar-hide flex items-center md:border-l md:border-r border-gray-300 dark:border-gray-600 md:mx-2 min-h-[3.5rem] [&>div]:!flex-nowrap">
+                <TagInput tags={tags} onChange={setTags} suggestions={availableTags} />
+            </div>
+
+            {/* SECCIÓN 4 (DESKTOP SOLAMENTE): Herramientas IA (Texto) + Estado */}
+            <div className="hidden md:flex items-center gap-4 px-4 flex-shrink-0">
+                 {/* Botón IA Desktop (Texto + Icono) */}
+                 <div className="relative" ref={desktopMenuRef}>
+                    <button 
+                        onClick={() => setIsAiMenuOpen(!isAiMenuOpen)}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 border ${
+                            isLoadingAi 
+                            ? 'bg-gradient-to-r from-primary to-accent1 text-white border-transparent animate-ai-shimmer bg-[length:200%_100%]' 
+                            : 'bg-white dark:bg-gray-700 text-primary dark:text-accent1 border-primary/20 dark:border-accent1/20 hover:shadow-md'
+                        }`}
+                    >
+                        <FiCpu className={isLoadingAi ? 'animate-spin' : ''} size={14} />
+                        <span className="whitespace-nowrap">Herramientas de IA</span>
+                        <FiChevronDown size={12} className={`transition-transform ${isAiMenuOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {isAiMenuOpen && <AiDropdownMenu />}
+                </div>
+
+                <div className="w-16 text-right">
+                    {status === 'saving' ? <span className="text-xs italic text-gray-500">Guardando...</span> : <span className="text-xs font-bold text-green-500 opacity-0 transition-opacity duration-500">Guardado</span>}
+                </div>
+            </div>
+
         </div>
       </div>
 
+      {/* Título e Inputs */}
       <input
         type="text"
         value={title}
         onChange={(e) => { setTitle(e.target.value); if (status === 'error') setStatus('idle'); }}
         placeholder="Título de la nota"
-        className="border-b border-gray-200 bg-transparent px-6 py-4 text-3xl font-bold text-gray-800 outline-none dark:border-gray-700 dark:text-white"
+        className="border-b border-gray-200 bg-transparent px-6 py-4 text-3xl font-bold text-gray-800 outline-none dark:border-gray-700 dark:text-white placeholder-gray-300 dark:placeholder-gray-600"
       />
 
       {note.type === 'code' ? renderCodeEditor() : renderMarkdownEditor()}
